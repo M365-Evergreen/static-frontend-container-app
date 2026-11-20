@@ -1,14 +1,14 @@
 # Phase three tasks
 
 - [x] Extract the orchestrator and specialized agent definitions from `agents/main.py`.
-- [x] Use an asynchronous OpenAI client with a configurable model.
+- [x] Use asynchronous Gemini and NVIDIA-hosted model adapters with explicit provider/model selection.
 - [x] Run planner, analyst/researcher, and synthesizer sequentially, supplying prior conversation context and preceding agent results.
 - [x] Clearly label research as model-only analysis without current-source verification or invented citations.
 - [x] Define inputs, outputs, and internal run payloads with Pydantic v2 models.
 - [x] Add explicit input-size, output-token, execution-time, and agent-call limits.
 - [x] Treat `max_turns` as a hard agent-call ceiling. Reject values too small to complete the three-agent pipeline rather than returning partial work as success.
 - [x] Surface missing configuration and provider failures explicitly.
-- [x] Pass only the required `OPENAI_API_KEY` secret from the Worker environment into the container; never put secret values in source, images, or logs.
+- [x] Pass only the selected provider's `LLM_API_KEY` secret from the Worker environment into the container; never put secret values in source, images, or logs.
 
 ## Completion criterion
 
@@ -17,20 +17,21 @@ Prompts produce genuine intermediate outputs and a synthesized answer; follow-up
 ## Implementation
 
 - Extracted agent definitions, typed Pydantic models, limits, sanitized errors, and
-  the async orchestrator into dedicated modules. FastAPI owns the OpenAI client's
+  the async orchestrator into dedicated modules. FastAPI owns the selected provider client's
   lifespan and closes it on shutdown.
-- Use the pinned OpenAI SDK's async Responses API with `store=False`, no tools,
-  no provider-managed conversation chain, and no automatic SDK retries.
+- Use the installed Google Gen AI SDK's async GenerateContent API for Gemini and
+  async HTTP chat completions for NVIDIA-hosted models. Gemini uses `store=False`;
+  neither adapter enables tools, provider-managed conversation chains, automatic
+  continuation, or retries.
 - Pass stored completed conversation context to every stage, adding all preceding
   stage results. Preserve `planner_agent`, `research_agent`, and `synthesizer_agent`
   SSE names; explicitly label model-only analysis and synthesis.
-- Retain the selected configurable default `gpt-4.1-mini`. OpenAI currently marks
-  it deprecated while listing Responses API support. No model upgrade or silent
-  substitution was made. `OPENAI_MODEL` is a non-secret Worker variable forwarded
-  to the container; `OPENAI_API_KEY` remains the only forwarded secret.
+- Require explicit `LLM_PROVIDER` (`gemini` or `nvidia`) and `LLM_MODEL`. There is
+  no preferred provider, default model, or automatic substitution. The Worker
+  forwards those non-secret variables and the selected provider's `LLM_API_KEY`.
 - Bound prompt, JSON body, history, per-call text context, output tokens/text,
   individual request duration, total pipeline duration, and agent calls. See
-  [the exact limits](../README.md#openai-model-and-execution-limits).
+  [the exact limits](../README.md#model-providers-and-execution-limits).
 - Require `max_turns >= 3` and make exactly three calls. Reject partial pipeline
   completions at the Worker boundary; only all three successful results can be
   committed to durable history.
@@ -42,5 +43,6 @@ Prompts produce genuine intermediate outputs and a synthesized answer; follow-up
 
 ## References
 
-- [OpenAI Python async client and Responses API](https://github.com/openai/openai-python)
-- [Selected model status and Responses support](https://developers.openai.com/api/docs/models/gpt-4.1-mini)
+- [Google Gen AI Python SDK](https://github.com/googleapis/python-genai)
+- [Gemini GenerateContent and Interactions support](https://aistudio.google.com/docs/whats-new-gemini-4-hydrogen)
+- [NVIDIA model API](https://docs.api.nvidia.com/)

@@ -2,6 +2,9 @@
 
 ## Agreed scope
 
+The UI refactor below is complete. Its frontend-only restriction applied to that
+task; the subsequent provider migration is recorded separately at the end.
+
 Refactor the frontend using `docs/react-app/Ui/chat.md` as the interaction and layout reference, not as a package-installation recipe or scripted AI transport. Keep the real relative `/api/*` endpoints and typed SSE transport.
 
 The user selected frontend-only scope. Photos & Files, Deep Research, Web Search, and command execution remain visible as explicitly unavailable capabilities. Do not implement backend tools, fake execution, fabricated citations, scripted replies, or private model reasoning. Keep the three sequential agents and existing request/session contracts unchanged.
@@ -84,3 +87,21 @@ Run `pnpm run test:frontend`, `pnpm run typecheck`, `pnpm run lint`, and `pnpm r
 ## Completion criteria
 
 The home route renders a working, component-composed chat based on the reference. Real durable history, typed stage progress, send, cancellation, reset, safe Markdown/code rendering, anchored scrolling, and accessible states work. Every unsupported capability is visible and clearly marked unavailable. No backend behavior or unrelated scaffold pages are changed.
+
+## Provider-neutral migration
+
+- [x] Support Gemini and NVIDIA-hosted models through async provider adapters.
+- [x] Require explicit `LLM_PROVIDER` and `LLM_MODEL`, with no preferred default,
+  automatic provider fallback, or implicit model substitution.
+- [x] Use the selected provider's neutral `LLM_API_KEY` secret and remove the
+  OpenAI-only dependency and runtime configuration.
+- [x] Preserve exactly three model-only agents, typed SSE, durable history,
+  bounded outputs/timeouts, and cancellation. Disable retries and SDK continuation.
+- [x] Update configuration documentation and contributor instructions.
+- [x] Exercise both native APIs through mocked HTTP transports and verify
+  sanitized failures, refusal/truncation handling, shutdown, and context reuse.
+- [x] Regenerate bindings and finish the production build after the approved
+  concurrent Wrangler name/date edits.
+
+Before running or deploying, explicitly configure the provider, model, and
+protected key. Live provider calls and remote deployment are not part of this task.

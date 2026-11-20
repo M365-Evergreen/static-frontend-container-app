@@ -4,7 +4,8 @@ React + Vite + TypeScript frontend, a Cloudflare Worker gateway, and a Python 3.
 FastAPI backend running in Cloudflare Containers.
 
 **Current status:** the frontend and backend run real,
-sequential OpenAI planner, analyst/researcher, and synthesizer agents. Completed conversation
+sequential planner, analyst/researcher, and synthesizer agents using explicitly
+selected Gemini or NVIDIA-hosted models. No provider or model is preferred. Completed conversation
 history and request deduplication are persisted in the session's Durable Object.
 The chat UI is implemented and deployment access hardening remains the final
 account-policy prerequisite.
@@ -29,7 +30,7 @@ AgentContainer Durable Object
   |
   | validated run payload with stored history
   v
-FastAPI container on port 8080 -> OpenAI Responses API (stateless execution)
+FastAPI container on port 8080 -> selected model provider (stateless execution)
 ```
 
 The Worker serves assets through `ASSETS` and routes `/api/*` to
@@ -49,8 +50,9 @@ and ownership controls before exposing sensitive history or a paid-model endpoin
 ```text
 .github/                  Repository and scoped contributor instructions
 agents/
-  main.py                 FastAPI endpoints and OpenAI client lifespan
-  orchestrator.py         Bounded sequential OpenAI calls and typed SSE events
+  main.py                 FastAPI endpoints and provider-client lifespan
+  orchestrator.py         Bounded sequential model calls and typed SSE events
+  providers.py            Async Gemini and NVIDIA-hosted model adapters
   definitions.py          Planner, model-only analyst, and synthesizer instructions
   models.py               Pydantic input, output, configuration, and event models
   limits.py               Input, output, deadline, and agent-call bounds
@@ -99,12 +101,13 @@ not upgraded to the newest releases. Install pnpm using the
 pnpm install --frozen-lockfile
 ```
 
-Create an ignored `.dev.vars` file beside `wrangler.json` containing your local
-`OPENAI_API_KEY`. Do not commit or paste secret values into source or command
-arguments. The secret name is declared in `secrets.required` so type generation
-does not depend on a local secret file. Chat now requires a working key and incurs
-OpenAI usage charges. Missing configuration returns HTTP 503; there is no
-simulated fallback. Container `/health` remains available without a key.
+Create an ignored `.dev.vars` file beside `wrangler.json` containing `LLM_PROVIDER`,
+`LLM_MODEL`, and `LLM_API_KEY`. The key must belong to the selected provider.
+Do not commit or paste secret values into source or command arguments. The neutral
+secret name is declared in `secrets.required` so type generation does not depend
+on a local secret file. Chat requires valid provider configuration and may incur
+usage charges. Missing or invalid configuration returns HTTP 503; there is no
+provider/model fallback. Container `/health` remains available without a key.
 
 Vite may copy `.dev.vars` into the ignored Worker build directory for local
 preview. Never commit or upload those files as generic build artifacts; only
@@ -121,22 +124,34 @@ pnpm run dev
 Vite serves the frontend and runs the Worker locally. The first API request starts
 the local container; frontend requests use relative `/api/*` paths.
 
-## OpenAI model and execution limits
+## Model providers and execution limits
 
-`OPENAI_MODEL` is a non-secret Wrangler variable, passed into the container
-alongside the `OPENAI_API_KEY` secret. The selected default is `gpt-4.1-mini`.
-OpenAI currently marks this model deprecated while listing Responses API support;
-review [its model documentation](https://developers.openai.com/api/docs/models/gpt-4.1-mini)
-before choosing it for a deployment. There is no automatic model substitution.
+`LLM_PROVIDER` and `LLM_MODEL` are non-secret Wrangler variables, passed into the
+container alongside the `LLM_API_KEY` secret. Both variables are intentionally
+blank in `wrangler.json`: select them before deployment. No provider or model is
+preferred, and requests never fall back to another provider when one fails.
 
-To change the deployment model, edit `vars.OPENAI_MODEL` in `wrangler.json` and
-regenerate types. For a local override, set `OPENAI_MODEL` in the ignored
-`.dev.vars` file. Direct Python development reads these two environment
+| `LLM_PROVIDER` | Example `LLM_MODEL` from the repository | `LLM_API_KEY` |
+| --- | --- | --- |
+| `gemini` | `gemini-4-hydrogen` (also accepts a `models/` prefix) | Google Gemini API key |
+| `nvidia` | `mistralai/mistral-large-4-1t-a52b` | NVIDIA API key |
+
+Gemini uses the installed Google Gen AI SDK's asynchronous GenerateContent API.
+NVIDIA-hosted models use `https://integrate.api.nvidia.com/v1/chat/completions`
+through an async HTTP client; this is not the direct Mistral API. Model
+availability and access depend on your provider account. `clairic.py` is empty
+and does not yet define a provider integration.
+
+To select the deployment provider/model, edit `vars.LLM_PROVIDER` and
+`vars.LLM_MODEL` in `wrangler.json` and regenerate types. For local overrides,
+set these variables in the ignored `.dev.vars` file, along with `LLM_API_KEY`.
+Direct Python development reads the same three environment
 variables; it does not automatically load the Worker's `.dev.vars`. Restart a
 warm container after changing configuration.
 
-Each run makes exactly three sequential Responses API calls, with SDK retries
-disabled, `store=False`, and no tools. Each call receives authoritative completed
+Each run makes exactly three sequential model calls, with retries and SDK
+continuation disabled and no tools. Gemini uses `store=False`; NVIDIA requests
+have no provider-managed conversation chain. Each call receives authoritative completed
 history, the current prompt, and all preceding agent results. Analyst and final
 outputs explicitly state that analysis is model-only, without live source
 verification. Code Mode, browser tools, web search, and MCP tools are not enabled.
@@ -146,9 +161,9 @@ verification. Code Mode, browser tools, web search, and MCP tools are not enable
 | Public JSON body | 128 KiB |
 | Prompt | 8,000 Unicode code points |
 | Stored history supplied to a run | 100 messages and 24,000 Unicode code points |
-| Text context per OpenAI call, including instructions and earlier agent results | 50,000 Unicode code points |
+| Text context per model call, including instructions and earlier agent results | 50,000 Unicode code points |
 | Output per agent | 1,024 output tokens and 8,000 Unicode code points including labels |
-| OpenAI request timeout | 30 seconds, no SDK retries |
+| Model request timeout | 30 seconds, no retries or automatic continuation |
 | Entire Python pipeline | 90 seconds |
 | Worker run including container startup | 120 seconds |
 | Agent-call budget | `max_turns` from 3 to 10; default 5; exactly 3 calls |
@@ -176,7 +191,7 @@ secret-name, or compatibility configuration changes. Never edit generated
 declarations manually.
 
 The Vite build produces frontend assets in `dist/client` and a Worker deployment
-bundle/configuration under `dist/static_frontend_container_appr`. Build output is
+bundle/configuration under `dist/paulibaby_agent`. Build output is
 generated; edit `wrangler.json`, not the generated configuration.
 
 For Python development:
@@ -214,8 +229,8 @@ with Ctrl+C when finished.
 
 ## Deployment
 
-The configured Worker name is **`static-frontend-container-appr`**, including the
-trailing `r`. Bindings are `ASSETS` and `AGENT_CONTAINER` pointing to the exported
+The configured Worker name is **`paulibaby-agent`**. Bindings are `ASSETS` and
+`AGENT_CONTAINER` pointing to the exported
 `AgentContainer` class; SQLite migration `v1` is retained.
 
 Authenticate and verify the intended account:
@@ -225,7 +240,7 @@ pnpm exec wrangler login
 pnpm exec wrangler whoami
 ```
 
-Configure `OPENAI_API_KEY` through the Cloudflare dashboard or Wrangler's protected
+Configure the selected provider's `LLM_API_KEY` through the Cloudflare dashboard or Wrangler's protected
 interactive secret input. `wrangler secret put` creates a Worker version and
 deploys immediately; do not treat it as a local-only setup command.
 
@@ -313,7 +328,7 @@ data: {"status": "error", "code": "run_cancelled", "message": "The run was cance
 
 Configuration, authentication, rate/quota, connectivity, provider timeout,
 refusal, incomplete output, and pipeline deadline failures have explicit error
-codes. Raw OpenAI errors, credentials, prompts, and model outputs are not logged
+codes. Raw provider errors, credentials, prompts, and model outputs are not logged
 by the application's operational error handlers. Only all three successful
 stages followed by a valid completion can become stored history.
 
@@ -354,13 +369,13 @@ for history restoration after reload.
 
 ## Live session checks
 
-Offline tests always use an intercepted OpenAI HTTP transport and do not incur
+Offline tests exercise both providers with intercepted native HTTP transports and do not incur
 provider charges. With the local Worker running and a valid local key, explicitly
 opt into the bounded live agent acceptance test (six model calls):
 
 ```powershell
 $env:SESSION_API_BASE_URL = "http://127.0.0.1:5173"
-$env:RUN_LIVE_OPENAI = "true"
+$env:RUN_LIVE_MODELS = "true"
 uv run --project agents --locked pytest agents/tests/test_live_agents.py
 ```
 

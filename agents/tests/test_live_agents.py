@@ -9,8 +9,8 @@ BASE_URL = os.environ.get("SESSION_API_BASE_URL")
 pytestmark = [
     pytest.mark.asyncio,
     pytest.mark.skipif(
-        not BASE_URL or os.environ.get("RUN_LIVE_OPENAI") != "true",
-        reason="Six paid model calls require SESSION_API_BASE_URL and RUN_LIVE_OPENAI=true",
+        not BASE_URL or os.environ.get("RUN_LIVE_MODELS") != "true",
+        reason="Six paid model calls require SESSION_API_BASE_URL and RUN_LIVE_MODELS=true",
     ),
 ]
 

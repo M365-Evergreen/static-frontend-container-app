@@ -22,5 +22,9 @@ The Cloudflare account is `Paul@365evergreen.com` under account
 
 The public Worker deployment is available at
 `https://static-frontend-container-appr.paul-563.workers.dev`.
-`OPENAI_API_KEY` is bound as a protected `secret_text` Worker secret, and the frontend
-and `/api/history` route are reachable.
+At the time of this deployment record, `OPENAI_API_KEY` was bound as a protected
+`secret_text` Worker secret, and the frontend and `/api/history` route were reachable.
+The provider-neutral runtime no longer uses that secret. Before deploying the
+updated runtime, explicitly set `LLM_PROVIDER` and `LLM_MODEL` and configure the
+selected provider's protected `LLM_API_KEY` secret. This refactor does not update
+the live deployment or its secrets.

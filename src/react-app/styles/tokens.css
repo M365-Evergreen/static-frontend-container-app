@@ -1,14 +1,14 @@
 :root {
   /* High-Contrast Palette */
-  --color-bg-primary: #ffffff;
-  --color-bg-surface: #f4f4f6;
+  --color-bg-primary: #f1f1f1;
+  --color-bg-surface: #c9c9cf;
   --color-text-primary: #111111;
   --color-text-secondary: #333333;
   --color-border: #222222;
 
   /* Interactive & Focus States */
-  --color-accent: #004499;
-  --color-accent-hover: #002e66;
+  --color-accent: #9b0000;
+  --color-accent-hover: #7e8389;
   --color-accent-text: #ffffff;
   --color-focus-ring: #d93800;
 

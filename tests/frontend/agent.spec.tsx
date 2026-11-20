@@ -136,6 +136,52 @@ describe('agent conversation', () => {
     await waitFor(() => expect(run.cancel).toHaveBeenCalledOnce());
   });
 
+  it('blocks new submissions while a cancellation is still being confirmed', async () => {
+    const run = streamingRun();
+    let confirm: (response: Response) => void = () => {};
+    vi.stubGlobal('fetch', vi.fn(async (_url: string, init: RequestInit) => {
+      if (init.method === 'POST') return run.response;
+      if (init.method === 'DELETE') return new Promise<Response>((resolve) => { confirm = resolve; });
+      return history(new Headers(init.headers).get('x-session-id') ?? '');
+    }));
+    render(<Agent />);
+    const user = userEvent.setup();
+    const input = screen.getByRole('textbox', { name: 'Message' });
+    await waitFor(() => expect(input.hasAttribute('disabled')).toBe(false));
+    await user.type(input, 'Stop this run');
+    await user.click(screen.getByRole('button', { name: 'Send message' }));
+    await user.click(await screen.findByRole('button', { name: 'Stop agents' }));
+    await act(async () => run.emit({ status: 'error', code: 'run_cancelled', message: 'Server stopped the run.' }));
+    expect(input.hasAttribute('disabled')).toBe(true);
+    expect(screen.getByRole('button', { name: 'Cancelling run' }).hasAttribute('disabled')).toBe(true);
+    expect(screen.getByRole('button', { name: 'Reset conversation' }).hasAttribute('disabled')).toBe(true);
+    await act(async () => confirm(new Response(null, { status: 204 })));
+    await waitFor(() => expect(input.hasAttribute('disabled')).toBe(false));
+    expect(screen.getByText('Run cancelled. No completed exchange was stored.')).toBeTruthy();
+  });
+
+  it('shows failed stage output without committing a failed exchange', async () => {
+    const run = streamingRun();
+    vi.stubGlobal('fetch', vi.fn(async (_url: string, init: RequestInit) => init.method === 'POST'
+      ? run.response : history(new Headers(init.headers).get('x-session-id') ?? '')));
+    render(<Agent />);
+    const user = userEvent.setup();
+    const input = screen.getByRole('textbox', { name: 'Message' });
+    await waitFor(() => expect(input.hasAttribute('disabled')).toBe(false));
+    await user.type(input, 'Research this');
+    await user.click(screen.getByRole('button', { name: 'Send message' }));
+    await act(async () => {
+      run.emit({ status: 'running', turn: 1, agent: 'planner_agent', output: 'Initial plan.' });
+      run.emit({ status: 'error', code: 'provider_timeout', message: 'The research call timed out.' });
+    });
+    expect(await screen.findByText('The research call timed out.')).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: /Planner Completed/ }));
+    expect(screen.getByText('Initial plan.')).toBeTruthy();
+    expect(screen.getByText('Stopped')).toBeTruthy();
+    expect(screen.getAllByText('Research this')).toHaveLength(1);
+    expect(input.hasAttribute('disabled')).toBe(false);
+  });
+
   it('restores a committed exchange if completion wins the cancellation race', async () => {
     const run = streamingRun();
     let requestId = '';

@@ -27,7 +27,7 @@ export function AppShell({ children }: AppShellProps) {
       <header className={styles.header}>
         <Container className={styles.headerInner}>
           <NavLink to="/" className={styles.brand}>
-            StaticApp
+            Paulibaby
           </NavLink>
 
           <nav aria-label="Primary">

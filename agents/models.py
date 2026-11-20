@@ -5,7 +5,6 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 from pydantic_core import PydanticCustomError
 
 from agents.limits import (
-    DEFAULT_MODEL,
     MAX_AGENT_OUTPUT_CHARS,
     MAX_HISTORY_CHARS,
     MAX_HISTORY_MESSAGES,
@@ -72,7 +71,8 @@ class RunRequest(ChatRequest):
 
 
 class PipelineSettings(StrictModel):
-    model: str = Field(default=DEFAULT_MODEL, min_length=1, max_length=128)
+    provider: Literal["gemini", "nvidia"]
+    model: str = Field(min_length=1, max_length=128)
     max_output_tokens: int = Field(default=MAX_OUTPUT_TOKENS, ge=1, le=MAX_OUTPUT_TOKENS)
     run_timeout_seconds: float = Field(default=RUN_TIMEOUT_SECONDS, gt=0, le=RUN_TIMEOUT_SECONDS)
 

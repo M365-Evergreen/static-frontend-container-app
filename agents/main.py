@@ -8,24 +8,14 @@ from uuid import UUID
 from fastapi import FastAPI, Header, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, StreamingResponse
-from openai import AsyncOpenAI
 from pydantic import ValidationError
 
 from agents.errors import PipelineError
-from agents.limits import DEFAULT_MODEL, REQUEST_TIMEOUT_SECONDS
 from agents.models import ErrorResponse, PipelineSettings, RunRequest
 from agents.orchestrator import AgentPipeline
+from agents.providers import create_provider
 
 logger = logging.getLogger("agents.main")
-
-
-def create_client(api_key: str) -> AsyncOpenAI:
-    return AsyncOpenAI(
-        api_key=api_key,
-        base_url="https://api.openai.com/v1",
-        timeout=REQUEST_TIMEOUT_SECONDS,
-        max_retries=0,
-    )
 
 
 @asynccontextmanager
@@ -35,14 +25,17 @@ async def lifespan(app: FastAPI):
     app.state.configuration_error = None
     try:
         try:
-            settings = PipelineSettings(model=os.environ.get("OPENAI_MODEL", DEFAULT_MODEL))
+            settings = PipelineSettings(
+                provider=os.environ.get("LLM_PROVIDER", ""),
+                model=os.environ.get("LLM_MODEL", ""),
+            )
         except ValidationError:
             app.state.configuration_error = PipelineError("invalid_configuration")
-        api_key = os.environ.get("OPENAI_API_KEY", "").strip()
-        if not api_key:
+        api_key = os.environ.get("LLM_API_KEY", "").strip()
+        if not api_key and app.state.configuration_error is None:
             app.state.configuration_error = PipelineError("missing_configuration")
         if app.state.configuration_error is None:
-            client = create_client(api_key)
+            client = create_provider(settings.provider, api_key)
             app.state.pipeline = AgentPipeline(client, settings)
         else:
             logger.warning(

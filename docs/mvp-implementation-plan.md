@@ -2,12 +2,12 @@
 
 ## Scope and decisions
 
-Build a single-conversation chat application using OpenAI, three sequential agents,
+Build a single-conversation chat application using explicitly selected model providers, three sequential agents,
 streamed progress, and durable conversation history.
 
 Confirmed decisions:
 
-- OpenAI only.
+- Gemini and NVIDIA-hosted models, with explicit provider/model selection and no preferred default or fallback.
 - Conversation history survives container sleep and restarts.
 - Model-only research and analysis; no live web search or source verification.
 
@@ -21,7 +21,7 @@ Phase two implements durable sessions while retaining simulated execution; see
 browser tools, Agent Skills, and live search were considered but are not enabled.
 Adding live retrieval or tool execution requires a separate scope/access decision.
 
-Phase three replaces the simulation with bounded sequential OpenAI execution;
+Phase three replaces the simulation with bounded sequential model execution;
 see [phase three tasks](MVP-03.md) and the README for configuration and limits.
 The frontend chat UI and deployment access hardening remain later phases.
 
@@ -31,7 +31,7 @@ These findings describe the repository inspected during planning:
 
 - The frontend is the Vite demo under `src\react-app`, rather than the README's
   `src\client`.
-- The backend emits simulated agent outputs and does not call OpenAI.
+- The backend emits simulated agent outputs and does not call a model provider.
 - Python history is in memory and disappears when the container stops.
   Session-pinned routing does not make that memory durable.
 - Worker routing falls back to a shared `default-session`. Session IDs accepted
@@ -65,7 +65,7 @@ FastAPI container
   |
   | planner -> analyst/researcher -> synthesizer
   v
-OpenAI
+Selected Gemini or NVIDIA-hosted model
 ```
 
 The Durable Object owns completed conversation history. Python memory may cache
@@ -117,7 +117,7 @@ turns, and separate sessions cannot read or influence one another.
 
 - Extract the orchestrator and specialized agent definitions from
   `agents\main.py`.
-- Use an asynchronous OpenAI client with a configurable model.
+- Use asynchronous provider adapters with explicit `LLM_PROVIDER` and `LLM_MODEL`.
 - Run planner, analyst/researcher, and synthesizer sequentially, supplying prior
   conversation context and preceding agent results.
 - Clearly label research as model-only analysis without current-source
@@ -127,7 +127,7 @@ turns, and separate sessions cannot read or influence one another.
 - Treat `max_turns` as a hard agent-call ceiling. Reject values too small to
   complete the three-agent pipeline rather than returning partial work as success.
 - Surface missing configuration and provider failures explicitly.
-- Pass only the required OpenAI secret from the Worker environment into the
+- Pass only the selected provider's `LLM_API_KEY` secret from the Worker environment into the
   container; never put secret values in source, images, or logs.
 
 Completion criterion: prompts produce genuine intermediate outputs and a
@@ -195,7 +195,7 @@ holding a Durable Object initialization/concurrency block across a long LLM run.
 6. Overlapping requests for one session are rejected without corrupting history.
 7. Retrying the same request ID does not create duplicate completed turns.
 8. Cancellation and timeout release the session without storing a successful draft.
-9. Invalid input, malformed SSE, truncated streams, and OpenAI failures produce
+9. Invalid input, malformed SSE, truncated streams, and provider failures produce
    visible errors rather than success-shaped fallbacks.
 10. Missing secrets fail clearly, and secret values do not reach the browser,
     repository, container image, or logs.

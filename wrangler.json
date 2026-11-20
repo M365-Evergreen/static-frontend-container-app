@@ -1,17 +1,19 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "static-frontend-container-appr",
+  "name": "paulibaby-agent",
   "main": "src/worker/index.ts",
-  "compatibility_date": "2026-03-01",
+  "compatibility_date": "2026-08-18",
   "compatibility_flags": [
     "nodejs_compat"
   ],
+  "observability": { "enabled": true },
   "vars": {
-    "OPENAI_MODEL": "gpt-4.1-mini"
+    "LLM_PROVIDER": "google",
+    "LLM_MODEL": "gemini-3.8-flash"
   },
   "secrets": {
     "required": [
-      "OPENAI_API_KEY"
+      "LLM_API_KEY"
     ]
   },
   "assets": {
@@ -25,7 +27,6 @@
     {
       "class_name": "AgentContainer",
       "image": "./container/Dockerfile",
-      "image_build_context": ".",
       "max_instances": 10
     }
   ],

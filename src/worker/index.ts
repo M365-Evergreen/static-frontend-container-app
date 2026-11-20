@@ -9,8 +9,9 @@ export class AgentContainer extends Container<Env> {
   sleepAfter = "10m";
 
   envVars = {
-    OPENAI_API_KEY: this.env.OPENAI_API_KEY ?? "",
-    OPENAI_MODEL: this.env.OPENAI_MODEL,
+    LLM_API_KEY: this.env.LLM_API_KEY ?? "",
+    LLM_PROVIDER: this.env.LLM_PROVIDER,
+    LLM_MODEL: this.env.LLM_MODEL,
   };
 
   private readonly session: SessionCoordinator;
