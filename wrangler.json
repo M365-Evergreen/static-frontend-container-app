@@ -40,6 +40,18 @@
   "ai": {
     "binding": "AI"
   },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_id": "e33c33ce-55ad-49b4-8d89-02e1718d1d03"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "R2",
+      "bucket_name": "paulibaby-agent"
+    }
+  ],
   "migrations": [
     {
       "tag": "v1",
