@@ -1,0 +1,72 @@
+.composer {
+  padding: var(--space-md);
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+  background: var(--color-bg-primary);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.field label {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.input {
+  width: 100%;
+  min-height: 4rem;
+  max-height: 10rem;
+  resize: vertical;
+  padding: var(--space-sm);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  font: inherit;
+}
+
+.input:disabled {
+  background: var(--color-bg-surface);
+}
+
+.input::placeholder {
+  color: var(--color-text-secondary);
+}
+
+.hint,
+.contextNote {
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-top: var(--space-sm);
+}
+
+.send {
+  margin-inline-start: auto;
+  background: var(--color-accent);
+  color: var(--color-accent-text);
+  border-color: var(--color-accent);
+}
+
+.send[data-hovered] {
+  background: var(--color-accent-hover);
+}
+
+.send[data-disabled] {
+  color: var(--color-accent-text);
+}
+
+.error {
+  color: var(--color-text-primary);
+  font-size: 0.875rem;
+  font-weight: 600;
+}

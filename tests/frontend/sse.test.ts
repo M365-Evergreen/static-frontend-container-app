@@ -71,3 +71,46 @@ test("accepts terminal error events", async () => {
   );
   assert.equal(events[0].status, "error");
 });
+
+test("aborting a pending read cancels the reader and releases its lock", async () => {
+  let cancelled = false;
+  const body = new ReadableStream<Uint8Array>({
+    cancel() { cancelled = true; },
+  });
+  const controller = new AbortController();
+  const response = new Response(body, { headers: { "content-type": "text/event-stream" } });
+  const reading = readSse(response, controller.signal, () => undefined);
+  controller.abort();
+  await assert.rejects(reading, { name: "AbortError" });
+  assert.equal(cancelled, true);
+  assert.equal(body.locked, false);
+});
+
+test("stops on terminal success without waiting for the server to close", async () => {
+  const encoder = new TextEncoder();
+  let cancelled = false;
+  const body = new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(encoder.encode(
+        'data: {"status":"done","request_id":"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa","final_output":"Done","history_length":2}\n\n',
+      ));
+    },
+    cancel() { cancelled = true; },
+  });
+  const events: SseEvent[] = [];
+  await readSse(new Response(body, { headers: { "content-type": "text/event-stream" } }), new AbortController().signal, (event) => events.push(event));
+  assert.equal(events.length, 1);
+  assert.equal(cancelled, true);
+  assert.equal(body.locked, false);
+});
+
+test("releases a malformed stream rather than leaving its reader open", async () => {
+  let cancelled = false;
+  const body = new ReadableStream<Uint8Array>({
+    start(controller) { controller.enqueue(new TextEncoder().encode('data: broken\n\n')); },
+    cancel() { cancelled = true; },
+  });
+  await assert.rejects(readSse(new Response(body, { headers: { "content-type": "text/event-stream" } }), new AbortController().signal, () => undefined), /malformed/);
+  assert.equal(cancelled, true);
+  assert.equal(body.locked, false);
+});

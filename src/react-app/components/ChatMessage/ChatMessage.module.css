@@ -1,0 +1,41 @@
+.message {
+  display: flex;
+  min-width: 0;
+  margin-block: var(--space-lg);
+}
+
+.user {
+  justify-content: flex-end;
+  animation: appear 160ms ease-out;
+}
+
+.bubble {
+  max-width: min(85%, 36rem);
+  margin: 0;
+  padding: var(--space-sm) var(--space-md);
+  border-radius: 1rem;
+  background: var(--color-bg-surface);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.assistant {
+  justify-content: flex-start;
+}
+
+.reply {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+@keyframes appear {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .user { animation: none; }
+}
