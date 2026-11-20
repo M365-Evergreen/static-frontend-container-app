@@ -1,3 +1,5 @@
+# Phase two tasks
+
 - [ ] Require a validated session UUID; remove shared default-session behaviour.
 - [ ] Normalize any supported query-based ID into the canonical `x-session-id` header,  or remove that alternative from the public contract.
 - [ ] Route every conversation to its corresponding Durable Object.
@@ -10,5 +12,6 @@
 
 ## Completion criterion
 
-## browser reload and container restart preserve completed  
+## browser reload and container restart preserve completed
+
 turns, and separate sessions cannot read or influence one another.
