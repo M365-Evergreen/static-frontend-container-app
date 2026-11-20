@@ -16,6 +16,18 @@ a Worker gateway, and a Python 3.12 FastAPI backend in Cloudflare Containers.
 Use the existing SQLite-backed Durable Object as the authoritative conversation
 store. D1, R2, and the Agents SDK are not needed for this scope.
 
+<<<<<<< HEAD
+=======
+Phase two implements durable sessions while retaining simulated execution; see
+[phase two tasks and the Cloudflare tooling assessment](MVP-02.md). Code Mode,
+browser tools, Agent Skills, and live search were considered but are not enabled.
+Adding live retrieval or tool execution requires a separate scope/access decision.
+
+Phase three replaces the simulation with bounded sequential OpenAI execution;
+see [phase three tasks](MVP-03.md) and the README for configuration and limits.
+The frontend chat UI and deployment access hardening remain later phases.
+
+>>>>>>> e84d3c3 (feat: implement session management with SQLite storage)
 ## Current scaffold gaps
 
 These findings describe the repository inspected during planning:
