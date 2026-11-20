@@ -14,6 +14,8 @@
     "deploy": "pnpm run build && wrangler deploy",
     "cf-typegen": "wrangler types",
     "typecheck": "tsc -b",
+    "test:worker": "tsc -p tsconfig.tests.json --noEmit false --rewriteRelativeImportExtensions --outDir .wrangler/worker-tests && node --test .wrangler/worker-tests/tests/worker/*.test.js",
+    "test:frontend": "tsc -p tsconfig.tests.json --noEmit false --rewriteRelativeImportExtensions --outDir .wrangler/test-run && node --test .wrangler/test-run/tests/frontend/*.test.js",
     "lint": "eslint . --max-warnings 0"
   },
   "dependencies": {

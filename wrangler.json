@@ -3,12 +3,22 @@
   "name": "static-frontend-container-appr",
   "main": "src/worker/index.ts",
   "compatibility_date": "2026-03-01",
-  "compatibility_flags": ["nodejs_compat"],
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "vars": {
+    "OPENAI_MODEL": "gpt-4.1-mini"
+  },
   "secrets": {
-    "required": ["OPENAI_API_KEY"]
+    "required": [
+      "OPENAI_API_KEY"
+    ]
   },
   "assets": {
     "binding": "ASSETS",
+    "run_worker_first": [
+      "/api/*"
+    ],
     "not_found_handling": "single-page-application"
   },
   "containers": [
@@ -27,10 +37,15 @@
       }
     ]
   },
+  "ai": {
+    "binding": "AI"
+  },
   "migrations": [
     {
       "tag": "v1",
-      "new_sqlite_classes": ["AgentContainer"]
+      "new_sqlite_classes": [
+        "AgentContainer"
+      ]
     }
   ]
 }
