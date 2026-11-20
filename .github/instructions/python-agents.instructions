@@ -1,0 +1,9 @@
+---
+applyTo: "agents/**/*.py,container/**/*"
+---
+# Python FastAPI & Multi-Agent Rules
+- Use Python 3.12+ type hints (`list[str]`, `dict[str, Any]`, `AsyncGenerator`) and Pydantic v2 models.
+- Keep session state isolated by `session_id` inside a thread/async-safe store (e.g., `asyncio.Lock` per session) so concurrent requests to the same container never corrupt agent memory.
+- Use `async def` endpoints and non-blocking async LLM/HTTP clients (`httpx.AsyncClient`).
+- Handle `SIGTERM` cleanly in FastAPI lifespan hooks to flush active session state before the container sleeps.
+- Keep Docker images small using `uv` and `python:3.12-slim` to minimize container cold-start latency.
