@@ -2,7 +2,7 @@ import { StrictMode } from 'react';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
-import Agent from '../../src/react-app/Agent';
+import Agent from '../../src/react-app/components/Agent/Agent';
 import { AgentComposer } from '../../src/react-app/components/AgentComposer/AgentComposer';
 import { Markdown } from '../../src/react-app/components/Markdown/Markdown';
 import { loadHistory } from '../../src/react-app/chat/chat.api';

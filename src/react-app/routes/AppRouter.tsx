@@ -3,7 +3,7 @@ import { AppShell } from '../layouts/AppShell';
 import { HomePage } from '../pages/HomePage';
 import { AboutPage } from '../pages/AboutPage';
 import { NotFoundPage } from '../pages/NotFoundPage';
-import AgentPage from '../pages/AgentPage';
+import AgentPage from '../pages/AgentPage/AgentPage';
 
 export function AppRouter() {
   return (

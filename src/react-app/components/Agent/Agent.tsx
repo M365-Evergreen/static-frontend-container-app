@@ -1,11 +1,11 @@
-import { AgentComposer } from './components/AgentComposer/AgentComposer';
-import { AgentEmptyState } from './components/AgentEmptyState/AgentEmptyState';
-import { AgentHeader } from './components/AgentHeader/AgentHeader';
-import { AgentTrace } from './components/AgentTrace/AgentTrace';
-import { Button } from './components/Button/Button';
-import { ChatMessage } from './components/ChatMessage/ChatMessage';
-import { MessageScroller } from './components/MessageScroller/MessageScroller';
-import { useAgentChat } from './hooks/useAgentChat';
+import { AgentComposer } from '../AgentComposer/AgentComposer';
+import { AgentEmptyState } from '../AgentEmptyState/AgentEmptyState';
+import { AgentHeader } from '../AgentHeader/AgentHeader';
+import { AgentTrace } from '../AgentTrace/AgentTrace';
+import { Button } from '../Button/Button';
+import { ChatMessage } from '../ChatMessage/ChatMessage';
+import { MessageScroller } from '../MessageScroller/MessageScroller';
+import { useAgentChat } from '../../hooks/useAgentChat';
 import styles from './Agent.module.css';
 
 function Agent() {
