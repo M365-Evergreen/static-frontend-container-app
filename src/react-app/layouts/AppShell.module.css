@@ -1,18 +1,30 @@
 .shell {
   display: flex;
+  min-height: 100dvh;
+}
+
+.workspace {
+  display: flex;
+  flex: 1;
   flex-direction: column;
-  min-height: 100vh;
+  min-width: 0;
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+  padding: 0 clamp(1rem, 4vw, 4rem) 1.5rem;
 }
 
 .skipLink {
-  position: absolute;
+  position: fixed;
   top: -100px;
   left: var(--space-md);
   z-index: 100;
   padding: var(--space-sm) var(--space-md);
-  background-color: var(--color-accent);
+  border-radius: var(--radius-sm);
+  background: var(--color-accent);
   color: var(--color-accent-text);
-  font-weight: 700;
   text-decoration: none;
 }
 
@@ -20,25 +32,8 @@
   top: var(--space-md);
 }
 
-
-
-
-.main {
-  flex: 1;
-  padding-block: var(--space-xl);
-}
-
-.footer {
-  background-color: var(--color-bg-surface);
-  border-top: 2px solid var(--color-border);
-  padding-block: var(--space-lg);
-  color: var(--color-text-secondary);
-}
-
-@media (min-width: 48rem) {
-  .headerInner {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
+@media (max-width: 47.999rem) {
+  .main {
+    padding: 0 1rem 1rem;
   }
 }

@@ -1,16 +1,17 @@
 :root {
-  /* High-Contrast Palette */
-  --color-bg-primary: #f1f1f1;
-  --color-bg-surface: #c9c9cf;
-  --color-text-primary: #111111;
-  --color-text-secondary: #333333;
-  --color-border: #222222;
+  /* Neutral surfaces with high-contrast text. */
+  --color-bg-primary: #ffffff;
+  --color-bg-surface: #ededed;
+  --color-bg-sidebar: #fafafa;
+  --color-text-primary: #242424;
+  --color-text-secondary: #656565;
+  --color-border: #e6e6e6;
 
   /* Interactive & Focus States */
-  --color-accent: #9b0000;
-  --color-accent-hover: #7e8389;
+  --color-accent: #242424;
+  --color-accent-hover: #404040;
   --color-accent-text: #ffffff;
-  --color-focus-ring: #d93800;
+  --color-focus-ring: #2563eb;
 
   /* Typography */
   --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -26,5 +27,5 @@
   --space-lg: 1.5rem;
   --space-xl: 2.5rem;
   --container-max-width: 64rem;
-  --radius-sm: 4px;
+  --radius-sm: 10px;
 }

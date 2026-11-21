@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { ArrowUp, Square } from 'lucide-react';
+import { ArrowUp, MessageSquare, Square } from 'lucide-react';
 import { TextArea, TextField } from 'react-aria-components/TextField';
 import { Text } from 'react-aria-components/Text';
 import { Form, Label } from '../Form/Form';
@@ -43,7 +43,7 @@ export function AgentComposer({
         validationBehavior="aria"
         className={styles.field}
       >
-        <Label>Message</Label>
+        <Label className="sr-only">Message</Label>
         <TextArea
           ref={input}
           placeholder="Ask the agents..."
@@ -57,13 +57,14 @@ export function AgentComposer({
             }
           }}
         />
-        <Text slot="description" className={styles.hint}>
+        <Text slot="description" className="sr-only">
           Enter to send. Shift+Enter for a new line.
         </Text>
         {error && <Text slot="errorMessage" role="alert" className={styles.error}>{error}</Text>}
       </TextField>
       <div className={styles.actions}>
         <ContextMenu />
+        <span className={styles.mode}><MessageSquare size={15} aria-hidden="true" />Chat</span>
         <span className={styles.contextNote}>Text only. Context tools unavailable.</span>
         {busy ? (
           <IconButton

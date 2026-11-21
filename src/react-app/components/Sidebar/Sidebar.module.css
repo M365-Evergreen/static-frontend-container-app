@@ -1,0 +1,158 @@
+.sidebar {
+  position: sticky;
+  top: 0;
+  flex: 0 0 4.5rem;
+  width: 4.5rem;
+  height: 100dvh;
+  overflow: hidden;
+  background: var(--color-bg-sidebar);
+  border-inline-end: 1px solid var(--color-border);
+  transition: flex-basis 180ms ease, width 180ms ease;
+}
+
+.sidebarOpen {
+  flex-basis: 17.5rem;
+  width: 17.5rem;
+}
+
+.content {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  flex-direction: column;
+  padding: 0.75rem;
+}
+
+.heading {
+  display: flex;
+  min-height: 3rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding-inline-start: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.heading h2,
+.brand {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-size: 1.375rem;
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  text-decoration: none;
+}
+
+.brand[hidden] {
+  display: none;
+}
+
+.sidebar:not(.sidebarOpen) .heading {
+  justify-content: center;
+  padding-inline-start: 0;
+  padding-bottom: 1rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.sidebar:not(.sidebarOpen) .navLink {
+  justify-content: center;
+  gap: 0;
+  padding-inline: 0;
+}
+
+.sidebar:not(.sidebarOpen) .label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.close {
+  border: 0;
+  background: transparent;
+}
+
+.navigation {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.navLink {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 0.75rem;
+  border-radius: 0.75rem;
+  color: var(--color-text-secondary);
+  font-size: 0.9375rem;
+  text-decoration: none;
+}
+
+.navLink svg {
+  flex-shrink: 0;
+}
+
+.navLink:hover,
+.navActive {
+  background: var(--color-bg-surface);
+  color: var(--color-text-primary);
+}
+
+.navActive {
+  font-weight: 600;
+}
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgb(0 0 0 / 25%);
+}
+
+.drawer {
+  width: min(17.5rem, calc(100vw - 3rem));
+  height: 100dvh;
+  background: var(--color-bg-sidebar);
+  box-shadow: 4px 0 24px rgb(0 0 0 / 10%);
+}
+
+.dialog {
+  height: 100%;
+  outline: none;
+}
+
+.dialog .content {
+  width: 100%;
+}
+
+.drawer[data-entering] {
+  animation: slide-in 180ms ease-out;
+}
+
+.drawer[data-exiting] {
+  animation: slide-in 180ms ease-in reverse;
+}
+
+@keyframes slide-in {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar {
+    transition: none;
+  }
+
+  .drawer[data-entering],
+  .drawer[data-exiting] {
+    animation: none;
+  }
+}

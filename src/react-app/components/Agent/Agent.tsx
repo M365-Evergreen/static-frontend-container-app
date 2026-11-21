@@ -10,6 +10,7 @@ import styles from './Agent.module.css';
 
 function Agent() {
   const chat = useAgentChat();
+  const isEmpty = !chat.loadingHistory && !chat.historyError && chat.messages.length === 0 && !chat.draft;
   const anchorId = chat.draft?.requestId ?? chat.traces[chat.traces.length - 1]?.requestId ?? null;
   const status = chat.loadingHistory ? 'Restoring conversation...'
     : chat.resetting ? 'Resetting conversation...'
@@ -38,43 +39,45 @@ function Agent() {
         </div>
       )}
       {chat.actionError && <p className={styles.error} role="alert">{chat.actionError}</p>}
-      {!chat.loadingHistory && !chat.historyError && chat.messages.length === 0 && !chat.draft ? (
-        <div className={styles.empty}><AgentEmptyState /></div>
-      ) : (
-        <MessageScroller anchorId={anchorId} busy={chat.busy || chat.loadingHistory}>
-          {chat.messages.map((message) => {
-            const trace = chat.traces.find((entry) => entry.requestId === message.request_id);
-            return <ChatMessage
-              key={`${message.role}-${message.sequence}`}
-              role={message.role}
-              content={message.content}
-              turnId={message.role === 'user' ? message.request_id : undefined}
-            >
-              {message.role === 'assistant' && trace && trace.progress.length > 0 && (
-                <AgentTrace progress={trace.progress} />
-              )}
-            </ChatMessage>;
-          })}
-          {chat.draft && (
-            <>
-              <ChatMessage role="user" content={chat.draft.prompt} turnId={chat.draft.requestId} />
-              <ChatMessage role="assistant">
-                <AgentTrace progress={chat.draft.progress} status={chat.draft.status} />
-                {chat.draft.error && <p className={styles.error} role="alert">{chat.draft.error}</p>}
-              </ChatMessage>
-            </>
-          )}
-        </MessageScroller>
-      )}
-      <AgentComposer
-        prompt={chat.prompt}
-        onPromptChange={chat.setPrompt}
-        busy={chat.busy}
-        cancelling={chat.cancelling}
-        disabled={chat.loadingHistory || Boolean(chat.historyError) || chat.resetting}
-        onSubmit={chat.submit}
-        onCancel={chat.cancel}
-      />
+      <div className={`${styles.workspace} ${isEmpty ? styles.workspaceEmpty : ''}`}>
+        {isEmpty ? (
+          <div className={styles.empty}><AgentEmptyState /></div>
+        ) : (
+          <MessageScroller anchorId={anchorId} busy={chat.busy || chat.loadingHistory}>
+            {chat.messages.map((message) => {
+              const trace = chat.traces.find((entry) => entry.requestId === message.request_id);
+              return <ChatMessage
+                key={`${message.role}-${message.sequence}`}
+                role={message.role}
+                content={message.content}
+                turnId={message.role === 'user' ? message.request_id : undefined}
+              >
+                {message.role === 'assistant' && trace && trace.progress.length > 0 && (
+                  <AgentTrace progress={trace.progress} />
+                )}
+              </ChatMessage>;
+            })}
+            {chat.draft && (
+              <>
+                <ChatMessage role="user" content={chat.draft.prompt} turnId={chat.draft.requestId} />
+                <ChatMessage role="assistant">
+                  <AgentTrace progress={chat.draft.progress} status={chat.draft.status} />
+                  {chat.draft.error && <p className={styles.error} role="alert">{chat.draft.error}</p>}
+                </ChatMessage>
+              </>
+            )}
+          </MessageScroller>
+        )}
+        <AgentComposer
+          prompt={chat.prompt}
+          onPromptChange={chat.setPrompt}
+          busy={chat.busy}
+          cancelling={chat.cancelling}
+          disabled={chat.loadingHistory || Boolean(chat.historyError) || chat.resetting}
+          onSubmit={chat.submit}
+          onCancel={chat.cancel}
+        />
+      </div>
     </section>
   );
 }
