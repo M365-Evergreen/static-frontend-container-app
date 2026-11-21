@@ -3,6 +3,7 @@ import { AppShell } from '../layouts/AppShell';
 import { HomePage } from '../pages/HomePage';
 import { AboutPage } from '../pages/AboutPage';
 import { NotFoundPage } from '../pages/NotFoundPage';
+import AgentPage from '../pages/AgentPage';
 
 export function AppRouter() {
   return (
@@ -14,6 +15,7 @@ export function AppRouter() {
             <Routes>
               <Route path="/" element={<HomePage />} />
               <Route path="/about" element={<AboutPage />} />
+              <Route path="/agent" element={<AgentPage />} />
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </Shell>

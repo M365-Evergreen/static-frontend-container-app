@@ -20,54 +20,8 @@
   top: var(--space-md);
 }
 
-.header {
-  background-color: var(--color-bg-surface);
-  border-bottom: 2px solid var(--color-border);
-  padding-block: var(--space-md);
-}
 
-.headerInner {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-md);
-}
 
-.brand {
-  font-size: var(--font-size-lg);
-  font-weight: 700;
-  color: var(--color-text-primary);
-  text-decoration: none;
-}
-.brandWrapper {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.navList {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-md);
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.navLink {
-  display: inline-block;
-  padding: var(--space-xs) var(--space-sm);
-  color: var(--color-text-primary);
-  font-weight: 600;
-  text-decoration: underline;
-  text-underline-offset: 4px;
-}
-
-.navLink[aria-current='page'] {
-  background-color: var(--color-text-primary);
-  color: var(--color-bg-primary);
-  text-decoration: none;
-  border-radius: var(--radius-sm);
-}
 
 .main {
   flex: 1;

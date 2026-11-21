@@ -3,6 +3,7 @@ import { Container } from '../components/Container/Container';
 import styles from './AppShell.module.css';
 import Header from '../components/Header/Header';
 
+
 export const AppShell = () => {
   return (
     <div className={styles.shell}>
@@ -14,6 +15,7 @@ export const AppShell = () => {
 
       <main className={styles.main} tabIndex={-1}>
         <Container>
+  
           <Outlet />
         </Container>
       </main>
