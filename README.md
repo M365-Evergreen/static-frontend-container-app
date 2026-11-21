@@ -7,6 +7,8 @@ FastAPI backend running in Cloudflare Containers.
 sequential planner, analyst/researcher, and synthesizer agents using explicitly
 selected Gemini or NVIDIA-hosted models. No provider or model is preferred. Completed conversation
 history and request deduplication are persisted in the session's Durable Object.
+The researcher can retrieve evidence from a configured Cloudflare AI Search MCP
+knowledge source before analysis.
 The chat UI is implemented and deployment access hardening remains the final
 account-policy prerequisite.
 
@@ -53,7 +55,8 @@ agents/
   main.py                 FastAPI endpoints and provider-client lifespan
   orchestrator.py         Bounded sequential model calls and typed SSE events
   providers.py            Async Gemini and NVIDIA-hosted model adapters
-  definitions.py          Planner, model-only analyst, and synthesizer instructions
+  definitions.py          Planner, analyst, and synthesizer instructions
+  knowledge.py            Bounded Cloudflare AI Search MCP retrieval
   models.py               Pydantic input, output, configuration, and event models
   limits.py               Input, output, deadline, and agent-call bounds
   errors.py               Sanitized provider/configuration errors
@@ -150,11 +153,29 @@ variables; it does not automatically load the Worker's `.dev.vars`. Restart a
 warm container after changing configuration.
 
 Each run makes exactly three sequential model calls, with retries and SDK
-continuation disabled and no tools. Gemini uses `store=False`; NVIDIA requests
+continuation disabled and no provider-side tools. Gemini uses `store=False`; NVIDIA requests
 have no provider-managed conversation chain. Each call receives authoritative completed
-history, the current prompt, and all preceding agent results. Analyst and final
-outputs explicitly state that analysis is model-only, without live source
-verification. Code Mode, browser tools, web search, and MCP tools are not enabled.
+history, the current prompt, and all preceding agent results. When
+`KNOWLEDGE_MCP_URL` is configured, one read-only MCP `search` runs after the planner
+and before the researcher. Only the current prompt is sent to that endpoint, never
+stored history or `LLM_API_KEY`. Retrieved chunks and their source metadata are
+supplied to the researcher and synthesizer as untrusted evidence with `K1`, `K2`,
+etc. citation identifiers. Source instructions must not override agent roles.
+
+`vars.KNOWLEDGE_MCP_URL` in `wrangler.json` points to the supplied Cloudflare AI
+Search `/mcp` endpoint. It is non-secret, uses HTTPS, and requires no authentication
+on the current public endpoint. Direct Python development must set this environment
+variable separately; `.dev.vars` can override it for Worker development. Set the
+Worker variable to an empty string to disable retrieval, or leave it unset for
+standalone Python. Restart warm containers after configuration changes.
+Protect or disable the public endpoint before indexing sensitive content; see
+[Cloudflare's MCP access guidance](https://developers.cloudflare.com/ai-search/api/search/mcp/).
+
+Analysis and answers label knowledge-assisted versus model-only execution.
+A successful search with no matching chunks explicitly reports that outcome and
+continues with model knowledge; retrieval errors do not silently fall back.
+Indexed knowledge is not live web verification. Code Mode, general browser/web
+search, attachments, and command execution remain unavailable.
 
 | Limit | Bound |
 | --- | --- |
@@ -164,6 +185,9 @@ verification. Code Mode, browser tools, web search, and MCP tools are not enable
 | Text context per model call, including instructions and earlier agent results | 50,000 Unicode code points |
 | Output per agent | 1,024 output tokens and 8,000 Unicode code points including labels |
 | Model request timeout | 30 seconds, no retries or automatic continuation |
+| Knowledge search | One query; at most 5 chunks; no query rewrite or reranking |
+| MCP response / retrieved context | 64 KiB per HTTP response / 12,000 Unicode code points |
+| Knowledge lookup deadline | 10 seconds including MCP initialization and cleanup, within the pipeline deadline |
 | Entire Python pipeline | 90 seconds |
 | Worker run including container startup | 120 seconds |
 | Agent-call budget | `max_turns` from 3 to 10; default 5; exactly 3 calls |
@@ -297,13 +321,18 @@ Example SSE frames:
 ```text
 data: {"turn": 1, "agent": "planner_agent", "status": "running", "output": "<planner result>"}
 
-data: {"turn": 2, "agent": "research_agent", "status": "running", "output": "Model-only analysis; no live browsing or source verification.\n\n<analysis>"}
+data: {"turn": 2, "agent": "research_agent", "status": "running", "output": "Knowledge-assisted analysis; indexed sources, not live web verification.\n\n<analysis>"}
 
-data: {"turn": 3, "agent": "synthesizer_agent", "status": "running", "output": "Model-only synthesis; no live sources verified.\n\n<answer>"}
+data: {"turn": 3, "agent": "synthesizer_agent", "status": "running", "output": "Knowledge-assisted answer; indexed sources, not live web verification.\n\n<answer>"}
 
 data: {"status": "done", "request_id": "<request-uuid>", "final_output": "...", "history_length": 2}
 
 ```
+
+These knowledge-assisted labels apply when search returns matching chunks.
+Without configured retrieval, outputs retain model-only labels; an empty search
+uses `No matching knowledge sources; model-only analysis/answer.` labels.
+No token-level or separate tool SSE events are added.
 
 The completed user/assistant pair and request ID are committed atomically before
 `done` is sent. Repeating the same request ID and input replays that stored `done`
@@ -328,7 +357,8 @@ data: {"status": "error", "code": "run_cancelled", "message": "The run was cance
 
 Configuration, authentication, rate/quota, connectivity, provider timeout,
 refusal, incomplete output, and pipeline deadline failures have explicit error
-codes. Raw provider errors, credentials, prompts, and model outputs are not logged
+codes. Retrieval failures use `knowledge_error`, `knowledge_timeout`, or
+`knowledge_limit`. Raw provider errors, credentials, prompts, and model outputs are not logged
 by the application's operational error handlers. Only all three successful
 stages followed by a valid completion can become stored history.
 

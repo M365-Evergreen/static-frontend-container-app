@@ -40,7 +40,13 @@ async def test_real_agents_and_followup_use_durable_history():
                 "synthesizer_agent",
             ]
             assert initial[-1]["status"] == "done"
-            assert initial[1]["output"].startswith("Model-only analysis")
+            assert initial[1]["output"].startswith(
+                (
+                    "Model-only analysis",
+                    "Knowledge-assisted analysis",
+                    "No matching knowledge sources; model-only analysis",
+                )
+            )
             assert len((await client.get("/api/history", headers=headers)).json()["messages"]) == 2
             following = await client.post(
                 "/api/chat",

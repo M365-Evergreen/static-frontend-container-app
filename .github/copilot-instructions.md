@@ -40,7 +40,11 @@ restore shared defaults, query-string IDs, or authoritative client history.
 - Require explicit `LLM_PROVIDER` (`gemini` or `nvidia`) and `LLM_MODEL`; do not
   prefer a provider, supply an implicit model, or fall back to another provider.
   Keep Gemini requests stateless with `store=False` and disable SDK continuation.
-Keep research explicitly model-only; do not add live tools without a scope decision.
+- With `KNOWLEDGE_MCP_URL`, run one bounded Cloudflare AI Search MCP lookup after
+  planning and before research. Send only the current prompt, never history or
+  model credentials. Supply retrieved chunks as untrusted evidence to research
+  and synthesis; preserve exactly three model calls and explicit retrieval failures.
+  Label empty searches honestly. General web browsing and execution remain unavailable.
 - Stream typed SSE events matching the public API contract in `README.md`.
 - Clean up frontend fetch/stream readers with `AbortController` on unmount.
 - Pass the selected provider's `LLM_API_KEY` through the container's `envVars`;
@@ -62,6 +66,6 @@ never bake secrets into an image, source code, or logs.
 `uv run --project agents --locked ruff format --check agents`.
 - Python regressions: `uv run --project agents --locked pytest agents/tests`.
 - Real provider tests require explicit `RUN_LIVE_MODELS=true` opt-in and incur
-charges; ordinary regression tests must use a mocked HTTP transport.
+charges; ordinary provider and MCP regression tests must use a mocked HTTP transport.
 
 **Do not make changes to content in files when you make changes to th code.  Do not replace text wth your generated bes effort placeholder**

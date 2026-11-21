@@ -8,7 +8,7 @@ import styles from './ContextMenu.module.css';
 const CAPABILITIES = [
   { id: 'files', label: 'Add Photos & Files', description: 'Attachments are not supported by the chat API.', Icon: Paperclip },
   { id: 'research', label: 'Deep Research', description: 'Extended research tools are not implemented.', Icon: Telescope },
-  { id: 'search', label: 'Web Search', description: 'The agents use model-only analysis, without live browsing.', Icon: Globe },
+  { id: 'search', label: 'Web Search', description: 'Configured knowledge retrieval is not live web browsing.', Icon: Globe },
   { id: 'commands', label: 'Run Commands', description: 'There is no command execution environment.', Icon: Terminal },
 ];
 

@@ -7,7 +7,7 @@ export function AgentEmptyState() {
       <MessageCircleDashed size={32} aria-hidden="true" />
       <h2>What should we work on?</h2>
       <p>Ask a question or share an idea. The planner, researcher, and synthesizer will work through it.</p>
-      <p className={styles.note}>Analysis is model-only. The agents cannot browse, read your files, or run commands.</p>
+      <p className={styles.note}>The researcher searches the configured knowledge source when enabled. The agents cannot browse the web, read your files, or run commands.</p>
     </div>
   );
 }

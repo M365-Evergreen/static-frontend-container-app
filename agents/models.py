@@ -1,7 +1,7 @@
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator, model_validator
 from pydantic_core import PydanticCustomError
 
 from agents.limits import (
@@ -30,6 +30,9 @@ ErrorCode = Literal[
     "output_limit",
     "run_timeout",
     "agent_failed",
+    "knowledge_error",
+    "knowledge_timeout",
+    "knowledge_limit",
 ]
 
 
@@ -73,6 +76,7 @@ class RunRequest(ChatRequest):
 class PipelineSettings(StrictModel):
     provider: Literal["gemini", "nvidia"]
     model: str = Field(min_length=1, max_length=128)
+    knowledge_mcp_url: HttpUrl | None = None
     max_output_tokens: int = Field(default=MAX_OUTPUT_TOKENS, ge=1, le=MAX_OUTPUT_TOKENS)
     run_timeout_seconds: float = Field(default=RUN_TIMEOUT_SECONDS, gt=0, le=RUN_TIMEOUT_SECONDS)
 
@@ -81,6 +85,15 @@ class PipelineSettings(StrictModel):
     def model_name(cls, value: str) -> str:
         if value != value.strip() or not value:
             raise ValueError("Model name must be nonblank without surrounding whitespace")
+        return value
+
+    @field_validator("knowledge_mcp_url")
+    @classmethod
+    def knowledge_url(cls, value: HttpUrl | None) -> HttpUrl | None:
+        if value is not None and (
+            value.scheme != "https" or value.username or value.password or value.fragment
+        ):
+            raise ValueError("Knowledge MCP URL must use HTTPS without credentials or a fragment")
         return value
 
 

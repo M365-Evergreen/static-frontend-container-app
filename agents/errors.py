@@ -4,7 +4,10 @@ ERRORS: dict[ErrorCode, tuple[int, str]] = {
     "missing_configuration": (503, "LLM_API_KEY is not configured."),
     "invalid_configuration": (
         503,
-        "Set LLM_PROVIDER to gemini or nvidia and LLM_MODEL to a nonblank model name.",
+        (
+            "Set LLM_PROVIDER to gemini or nvidia, LLM_MODEL to a nonblank model name, "
+            "and any KNOWLEDGE_MCP_URL to an HTTPS URL without credentials or a fragment."
+        ),
     ),
     "invalid_input": (422, "The run payload is invalid."),
     "input_limit": (413, "The prompt or conversation exceeds its size limit."),
@@ -18,6 +21,9 @@ ERRORS: dict[ErrorCode, tuple[int, str]] = {
     "output_limit": (502, "An agent exceeded its output limit."),
     "run_timeout": (504, "The agent pipeline exceeded its deadline."),
     "agent_failed": (502, "The agent pipeline failed."),
+    "knowledge_error": (502, "The knowledge source failed to return usable search results."),
+    "knowledge_timeout": (504, "The knowledge source search timed out."),
+    "knowledge_limit": (502, "The knowledge source exceeded its retrieval size limit."),
 }
 
 

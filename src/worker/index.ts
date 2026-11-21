@@ -12,6 +12,7 @@ export class AgentContainer extends Container<Env> {
     LLM_API_KEY: this.env.LLM_API_KEY ?? "",
     LLM_PROVIDER: this.env.LLM_PROVIDER,
     LLM_MODEL: this.env.LLM_MODEL,
+    KNOWLEDGE_MCP_URL: this.env.KNOWLEDGE_MCP_URL,
   };
 
   private readonly session: SessionCoordinator;

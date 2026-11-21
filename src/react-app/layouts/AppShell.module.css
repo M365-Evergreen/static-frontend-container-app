@@ -38,6 +38,11 @@
   color: var(--color-text-primary);
   text-decoration: none;
 }
+.brandWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
 
 .navList {
   display: flex;

@@ -261,7 +261,7 @@ describe('composer and content', () => {
       expect(item.getAttribute('aria-disabled')).toBe('true');
       expect(item.textContent).toContain('Unavailable');
     }
-    expect(screen.getByText('The agents use model-only analysis, without live browsing.')).toBeTruthy();
+    expect(screen.getByText('Configured knowledge retrieval is not live web browsing.')).toBeTruthy();
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('menu')).toBeNull();
     await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('button', { name: /Add context/ })));

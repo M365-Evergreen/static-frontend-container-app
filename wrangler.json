@@ -8,8 +8,9 @@
   ],
   "observability": { "enabled": true },
   "vars": {
-    "LLM_PROVIDER": "google",
-    "LLM_MODEL": "gemini-3.8-flash"
+    "LLM_PROVIDER": "gemini",
+    "LLM_MODEL": "gemini-3.8-flash",
+    "KNOWLEDGE_MCP_URL": "https://9904ca51-56e6-48cd-ae7e-3e0f154d2724.search.ai.cloudflare.com/mcp"
   },
   "secrets": {
     "required": [
@@ -27,6 +28,7 @@
     {
       "class_name": "AgentContainer",
       "image": "./container/Dockerfile",
+      "image_build_context": ".",
       "max_instances": 10
     }
   ],

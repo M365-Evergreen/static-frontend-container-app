@@ -17,7 +17,7 @@ const MAX_HISTORY_CHARS = 24000;
 const MAX_HISTORY_MESSAGES = 100;
 const BACKEND_ERRORS = {
   missing_configuration: [503, "LLM_API_KEY is not configured."],
-  invalid_configuration: [503, "Set LLM_PROVIDER to gemini or nvidia and LLM_MODEL to a nonblank model name."],
+  invalid_configuration: [503, "Set LLM_PROVIDER to gemini or nvidia, LLM_MODEL to a nonblank model name, and any KNOWLEDGE_MCP_URL to an HTTPS URL without credentials or a fragment."],
   invalid_input: [422, "The run payload is invalid."],
   input_limit: [413, "The prompt or conversation exceeds its size limit."],
   provider_authentication: [502, "Model provider authentication failed."],
@@ -30,6 +30,9 @@ const BACKEND_ERRORS = {
   output_limit: [502, "An agent exceeded its output limit."],
   run_timeout: [504, "The agent pipeline exceeded its deadline."],
   agent_failed: [502, "The agent pipeline failed."],
+  knowledge_error: [502, "The knowledge source failed to return usable search results."],
+  knowledge_timeout: [504, "The knowledge source search timed out."],
+  knowledge_limit: [502, "The knowledge source exceeded its retrieval size limit."],
 } as const;
 
 export function uuidHeader(request: Request, name: string): string {

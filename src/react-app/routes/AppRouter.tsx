@@ -7,13 +7,18 @@ import { NotFoundPage } from '../pages/NotFoundPage';
 export function AppRouter() {
   return (
     <BrowserRouter>
-      <AppShell>
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/about" element={<AboutPage />} />
-          <Route path="*" element={<NotFoundPage />} />
-        </Routes>
-      </AppShell>
+      {(() => {
+        const Shell = AppShell as React.ComponentType<React.PropsWithChildren>;
+        return (
+          <Shell>
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/about" element={<AboutPage />} />
+              <Route path="*" element={<NotFoundPage />} />
+            </Routes>
+          </Shell>
+        );
+      })()}
     </BrowserRouter>
   );
 }

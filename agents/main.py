@@ -11,6 +11,7 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import ValidationError
 
 from agents.errors import PipelineError
+from agents.knowledge import MCPKnowledgeSource
 from agents.models import ErrorResponse, PipelineSettings, RunRequest
 from agents.orchestrator import AgentPipeline
 from agents.providers import create_provider
@@ -21,6 +22,7 @@ logger = logging.getLogger("agents.main")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     client = None
+    knowledge_source = None
     app.state.pipeline = None
     app.state.configuration_error = None
     try:
@@ -28,6 +30,7 @@ async def lifespan(app: FastAPI):
             settings = PipelineSettings(
                 provider=os.environ.get("LLM_PROVIDER", ""),
                 model=os.environ.get("LLM_MODEL", ""),
+                knowledge_mcp_url=os.environ.get("KNOWLEDGE_MCP_URL") or None,
             )
         except ValidationError:
             app.state.configuration_error = PipelineError("invalid_configuration")
@@ -36,7 +39,9 @@ async def lifespan(app: FastAPI):
             app.state.configuration_error = PipelineError("missing_configuration")
         if app.state.configuration_error is None:
             client = create_provider(settings.provider, api_key)
-            app.state.pipeline = AgentPipeline(client, settings)
+            if settings.knowledge_mcp_url is not None:
+                knowledge_source = MCPKnowledgeSource(str(settings.knowledge_mcp_url))
+            app.state.pipeline = AgentPipeline(client, settings, knowledge_source)
         else:
             logger.warning(
                 '{"event":"agent_configuration_missing","code":"%s"}',
@@ -44,8 +49,12 @@ async def lifespan(app: FastAPI):
             )
         yield
     finally:
-        if client is not None:
-            await client.close()
+        try:
+            if knowledge_source is not None:
+                await knowledge_source.close()
+        finally:
+            if client is not None:
+                await client.close()
         app.state.pipeline = None
 
 

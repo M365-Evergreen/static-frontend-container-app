@@ -97,5 +97,6 @@ def provider(monkeypatch, request) -> MockProvider:
     monkeypatch.setenv("LLM_API_KEY", "test-key")
     monkeypatch.setenv("LLM_PROVIDER", mock.kind)
     monkeypatch.setenv("LLM_MODEL", mock.model)
+    monkeypatch.delenv("KNOWLEDGE_MCP_URL", raising=False)
     monkeypatch.setattr(main, "create_provider", mock.create)
     return mock

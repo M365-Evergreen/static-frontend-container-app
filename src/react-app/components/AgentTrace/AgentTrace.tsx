@@ -8,7 +8,7 @@ import styles from './AgentTrace.module.css';
 
 const STAGES = [
   { id: 'planner_agent', label: 'Planner' },
-  { id: 'research_agent', label: 'Researcher (model-only)' },
+  { id: 'research_agent', label: 'Researcher' },
   { id: 'synthesizer_agent', label: 'Synthesizer' },
 ] as const;
 
