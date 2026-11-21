@@ -2,10 +2,15 @@
 	font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
 	line-height: 1.5;
 	font-weight: 400;
+<<<<<<< HEAD
 
 	color-scheme: light dark;
 	color: rgba(255, 255, 255, 0.87);
 	background-color: #242424;
+=======
+	color: #f5f7fb;
+	background-color: #0f1116;
+>>>>>>> e84d3c3 (feat: implement session management with SQLite storage)
 
 	font-synthesis: none;
 	text-rendering: optimizeLegibility;
@@ -24,6 +29,7 @@ a:hover {
 
 body {
 	margin: 0;
+<<<<<<< HEAD
 	display: flex;
 	place-items: center;
 	min-width: 320px;
@@ -66,3 +72,8 @@ button:focus-visible {
 		background-color: #f9f9f9;
 	}
 }
+=======
+	min-width: 320px;
+	min-height: 100vh;
+}
+>>>>>>> e84d3c3 (feat: implement session management with SQLite storage)
