@@ -135,7 +135,9 @@ describe('sidebar toggle', () => {
 
 describe('workspace routes', () => {
   it('renders chat inside the shell on both Home and Agent without duplicate drawers', async () => {
-    vi.stubGlobal('fetch', vi.fn(async (_url: string, init: RequestInit) => Response.json({
+    vi.stubGlobal('fetch', vi.fn(async (url: string, init: RequestInit) => url === '/api/files'
+      ? Response.json({ files: [] })
+      : Response.json({
       session_id: new Headers(init.headers).get('x-session-id'),
       messages: [],
     })));
@@ -143,6 +145,7 @@ describe('workspace routes', () => {
     render(<AppRouter />);
     const user = userEvent.setup();
     expect(await screen.findByText('What should we work on?')).toBeTruthy();
+    expect(await screen.findByRole('grid', { name: 'Files' })).toBeTruthy();
     expect(screen.getByRole('main').contains(screen.getByRole('textbox', { name: 'Message' }))).toBe(true);
     await user.click(screen.getByRole('link', { name: 'Agent' }));
     expect(await screen.findByRole('button', { name: 'PAULIBABY' })).toBeTruthy();

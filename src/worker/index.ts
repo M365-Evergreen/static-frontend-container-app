@@ -3,6 +3,7 @@ import { SessionStore } from "./session-store.ts";
 import { SessionCoordinator, errorResponse, uuidHeader } from "./session.ts";
 import { SessionError } from "./session-store.ts";
 import { prepareContainer } from "./container-ready.ts";
+import { listFiles } from "./files.ts";
 
 export class AgentContainer extends Container<Env> {
   defaultPort = 8080;
@@ -62,6 +63,10 @@ export class AgentContainer extends Container<Env> {
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
+
+    if (url.pathname === "/api/files") {
+      return listFiles(request, env.R2);
+    }
 
     if (url.pathname.startsWith("/api/")) {
       try {
