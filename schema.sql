@@ -77,3 +77,47 @@ CREATE TRIGGER IF NOT EXISTS commands_au AFTER UPDATE ON commands BEGIN
   INSERT INTO commands_fts(rowid,title,description,code,tags)
   VALUES (new.rowid,new.title,new.description,new.code,new.tags);
 END;
+
+CREATE TABLE IF NOT EXISTS files (
+  id TEXT PRIMARY KEY,                    -- crypto.randomUUID()
+  bucket TEXT NOT NULL DEFAULT 'paulibaby-agent',
+  key TEXT NOT NULL,                      -- R2 object key
+  etag TEXT NOT NULL,                     -- changes on every re-upload
+  size INTEGER NOT NULL,
+  content_type TEXT,
+  uploaded_at TEXT,                       -- R2 object's own uploaded timestamp
+  source TEXT NOT NULL DEFAULT 'worker'
+    CHECK (source IN ('worker','dashboard','wrangler','presigned','backfill')),
+  status TEXT NOT NULL DEFAULT 'pending'
+    CHECK (status IN ('pending','indexed','skipped','failed')),
+  error TEXT,
+  text_chars INTEGER NOT NULL DEFAULT 0,
+  indexed_at TEXT,
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  UNIQUE (bucket, key)
+);
+CREATE INDEX IF NOT EXISTS idx_files_status ON files (status, created_at);
+CREATE INDEX IF NOT EXISTS idx_files_etag ON files (key, etag);
+
+CREATE TABLE IF NOT EXISTS file_chunks (
+  file_id TEXT NOT NULL REFERENCES files(id) ON DELETE CASCADE,
+  chunk_index INTEGER NOT NULL,
+  content TEXT NOT NULL,
+  PRIMARY KEY (file_id, chunk_index)
+);
+
+CREATE VIRTUAL TABLE IF NOT EXISTS file_chunks_fts USING fts5(
+  content, content='file_chunks', content_rowid='rowid', tokenize='unicode61'
+);
+
+CREATE TRIGGER IF NOT EXISTS file_chunks_ai AFTER INSERT ON file_chunks BEGIN
+  INSERT INTO file_chunks_fts(rowid, content) VALUES (new.rowid, new.content);
+END;
+CREATE TRIGGER IF NOT EXISTS file_chunks_ad AFTER DELETE ON file_chunks BEGIN
+  INSERT INTO file_chunks_fts(file_chunks_fts, rowid, content) VALUES ('delete', old.rowid, old.content);
+END;
+CREATE TRIGGER IF NOT EXISTS file_chunks_au AFTER UPDATE ON file_chunks BEGIN
+  INSERT INTO file_chunks_fts(file_chunks_fts, rowid, content) VALUES ('delete', old.rowid, old.content);
+  INSERT INTO file_chunks_fts(rowid, content) VALUES (new.rowid, new.content);
+END;
