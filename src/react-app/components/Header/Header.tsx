@@ -1,6 +1,6 @@
 import type { Ref } from 'react';
 import styles from './Header.module.css';
-import { Home, Info, PanelLeftOpen, User, Wrench } from 'lucide-react';
+import { Home, Info, PanelLeftOpen, User, Wrench, File } from 'lucide-react';
 import { IconButton } from '../IconButton/IconButton';
 import { Link, NavLink } from 'react-router-dom';
 const NAV_ITEMS = [
@@ -8,6 +8,7 @@ const NAV_ITEMS = [
   { label: 'About', to: '/about', icon: <Info /> },
   { label: 'Agent', to: '/agent', icon: <User /> },
   { label: 'Browser tools', to: '/browser-tools', icon: <Wrench /> },
+  { label: 'Files', to: '/documents', icon: <File /> },
 ];
 
 

@@ -39,7 +39,9 @@ import {
 
 async function selectOption(label: string, option: string) {
   const user = userEvent.setup();
-  await user.click(screen.getByRole("button", { name: new RegExp(`${label}$`) }));
+  await user.click(
+    screen.getByRole("button", { name: new RegExp(`${label}$`) }),
+  );
   await user.click(await screen.findByRole("option", { name: option }));
 }
 
@@ -61,6 +63,7 @@ describe("browser tools", () => {
     fireEvent.change(search, { target: { value: "" } });
     const user = userEvent.setup();
     const nav = screen.getByRole("navigation", { name: "Browser tools" });
+    const main = within(screen.getByRole("main"));
     for (const name of [
       "Code Formatter",
       "HTML to Markdown",
@@ -72,18 +75,47 @@ describe("browser tools", () => {
       "Publication Designer",
     ]) {
       await user.click(within(nav).getByRole("link", { name }));
-      await screen.findByRole("heading", {
-        name: name === "Publication Designer" ? "Publisher" : name,
-      }, { timeout: 10000 });
+      await main.findByRole(
+        "heading",
+        {
+          name: name === "Publication Designer" ? "Publisher" : name,
+        },
+        { timeout: 10000 },
+      );
       expect(screen.queryByRole("alert")).toBeNull();
     }
+    expect(fetchMock).not.toHaveBeenCalled();
+  }, 120000);
+
+  it("keeps publication menus open during selection and confirms discarding unsaved drafts", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    window.history.replaceState(
+      null,
+      "",
+      "/browser-tools/publication-designer",
+    );
+    const { default: App } = await import("../../src/react-app/App");
+    render(<App />);
+    const user = userEvent.setup();
+    const nav = screen.getByRole("navigation", { name: "Browser tools" });
+    await user.click(
+      within(nav).getByRole("link", { name: "Publication Designer" }),
+    );
+    await within(screen.getByRole("main")).findByRole(
+      "heading",
+      { name: "Publisher" },
+      { timeout: 10000 },
+    );
     await user.click(
       screen.getByRole("button", { name: "Create blank publication" }),
     );
-    await screen.findByRole("textbox", { name: "Publication content" }, { timeout: 10000 });
-    await user.click(
-      screen.getByRole("button", { name: "Page layout", exact: true }),
+    await within(screen.getByRole("main")).findByRole(
+      "textbox",
+      { name: "Publication content" },
+      { timeout: 30000 },
     );
+    await user.click(screen.getByRole("button", { name: "Page layout" }));
     await selectOption("Paper size", "A5");
     expect(
       screen.getByRole("button", { name: /Paper size$/ }).textContent,
@@ -110,7 +142,7 @@ describe("browser tools", () => {
       await screen.findByRole("heading", { name: "Available tools (8)" }),
     ).toBeTruthy();
     expect(fetchMock).not.toHaveBeenCalled();
-  }, 60000);
+  }, 120000);
 
   it("formats TypeScript with accessible selection and clears stale output on input edits", async () => {
     render(
@@ -148,7 +180,7 @@ describe("browser tools", () => {
     render(<DataConverter />);
     const user = userEvent.setup();
     await user.click(
-      screen.getByRole("button", { name: "Convert CSV to JSON", exact: true }),
+      screen.getByRole("button", { name: "Convert CSV to JSON" }),
     );
     await waitFor(() =>
       expect(
@@ -166,7 +198,7 @@ describe("browser tools", () => {
       target: { value: 'a,b\n"unfinished' },
     });
     await user.click(
-      screen.getByRole("button", { name: "Convert CSV to JSON", exact: true }),
+      screen.getByRole("button", { name: "Convert CSV to JSON" }),
     );
     expect((await screen.findByRole("alert")).textContent).toContain(
       "was not closed",

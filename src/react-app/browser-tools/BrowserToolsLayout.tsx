@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   Button,
@@ -77,7 +77,9 @@ export default function BrowserToolsLayout() {
             </Link>
           ))}
         </nav>
-        <Outlet context={{ query }} />
+        <Suspense fallback={<p role="status">Loading browser tool...</p>}>
+          <Outlet context={{ query }} />
+        </Suspense>
       </div>
     </RouterProvider>
   );

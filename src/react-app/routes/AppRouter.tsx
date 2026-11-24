@@ -1,11 +1,11 @@
-import { lazy, Suspense } from "react";
+import { lazy } from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { AppShell } from "../layouts/AppShell";
 import { HomePage } from "../pages/HomePage";
 import { AboutPage } from "../pages/AboutPage";
 import { NotFoundPage } from "../pages/NotFoundPage";
 import { AgentPage } from "../pages/AgentPage/AgentPage";
-import { DocumentsPage } from "../pages/DocumentsPage";
+import { DocumentsPage } from "../pages/DocumentsPage/DocumentsPage";
 import BrowserToolsLayout from "../browser-tools/BrowserToolsLayout";
 import ToolCatalog from "../browser-tools/components/ToolCatalog";
 import ToolNotFound from "../browser-tools/components/ToolNotFound";
@@ -46,11 +46,7 @@ const router = createBrowserRouter([
       { path: "/documents", element: <DocumentsPage /> },
       {
         path: "/browser-tools",
-        element: (
-          <Suspense fallback={<p role="status">Loading browser tool...</p>}>
-            <BrowserToolsLayout />
-          </Suspense>
-        ),
+        element: <BrowserToolsLayout />,
         errorElement: <ToolRouteError />,
         children: [
           { index: true, element: <ToolCatalog /> },

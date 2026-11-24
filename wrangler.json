@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "paulibaby-agent",
+  "name": "static-frontend-container-app",
   "main": "src/worker/index.ts",
   "compatibility_date": "2026-08-18",
   "compatibility_flags": [
