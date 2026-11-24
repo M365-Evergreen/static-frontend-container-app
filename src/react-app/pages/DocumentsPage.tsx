@@ -1,4 +1,3 @@
-import React from 'react';
 import { DocumentGrid } from '../components/DocumentGrid/DocumentGrid';
 import { SearchBox } from '../components/SearchBox/SearchBox';
 
