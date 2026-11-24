@@ -8,6 +8,7 @@ import {
   FileText,
   Presentation,
 } from "lucide-react";
+import type { FileSummary } from "../../../shared/files";
 
 export const fileTypes = [
   { id: "all", label: "All files", icon: Files },
@@ -87,4 +88,63 @@ export function fileSize(bytes: number): string {
   if (bytes >= 1024 ** 2) return `${sizeFormat.format(bytes / 1024 ** 2)} MB`;
   if (bytes >= 1024) return `${sizeFormat.format(bytes / 1024)} KB`;
   return `${bytes} B`;
+}
+
+export function bucketFolders(
+  files: readonly FileSummary[],
+  prefix: string,
+): string[] {
+  const folders = new Set<string>();
+  for (const { key } of files) {
+    if (!key.startsWith(prefix)) continue;
+    const relative = key.slice(prefix.length);
+    const separator = relative.indexOf("/");
+    if (separator >= 0) folders.add(prefix + relative.slice(0, separator + 1));
+  }
+  return [...folders].sort((a, b) => a.localeCompare(b, "en-GB"));
+}
+
+export interface BucketFolder {
+  id: string;
+  name: string;
+  children: BucketFolder[];
+}
+
+export function folderPaths(folder: string): string[] {
+  const paths: string[] = [];
+  let path = "";
+  for (const part of folder.split("/").filter(Boolean)) {
+    path += `${part}/`;
+    paths.push(path);
+  }
+  return paths;
+}
+
+export function bucketFolderTree(
+  files: readonly FileSummary[],
+): BucketFolder[] {
+  const folders = new Map<string, BucketFolder>();
+  const roots: BucketFolder[] = [];
+  for (const { key } of files) {
+    const parts = key.split("/");
+    parts.pop();
+    let path = "";
+    let siblings = roots;
+    for (const part of parts) {
+      if (!part) break;
+      path += `${part}/`;
+      let folder = folders.get(path);
+      if (!folder) {
+        folder = { id: path, name: part, children: [] };
+        folders.set(path, folder);
+        siblings.push(folder);
+      }
+      siblings = folder.children;
+    }
+  }
+  const byName = (a: BucketFolder, b: BucketFolder) =>
+    a.name.localeCompare(b.name, "en-GB");
+  roots.sort(byName);
+  for (const folder of folders.values()) folder.children.sort(byName);
+  return roots;
 }

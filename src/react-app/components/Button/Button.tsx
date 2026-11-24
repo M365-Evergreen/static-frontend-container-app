@@ -6,6 +6,7 @@ type ButtonVariant = 'primary' | 'secondary';
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children: ReactNode;
   variant?: ButtonVariant;
+  isDisabled?: Boolean;
 }
 
 export function Button({
@@ -13,6 +14,7 @@ export function Button({
   variant = 'primary',
   type = 'button',
   className,
+  isDisabled,
   ...rest
 }: ButtonProps) {
   const variantClass = styles[variant];

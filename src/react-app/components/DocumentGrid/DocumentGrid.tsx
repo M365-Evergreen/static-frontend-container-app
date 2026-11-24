@@ -1,22 +1,9 @@
 import React from 'react';
 import {} from 'lucide-react'
-import {loadFiles} from './files.api.ts';
-import type { FileSummary } from '../../../shared/files.ts';
 import styles from './DocumentGrid.module.css';
 
-type FileState =
-  | { status: 'loading' }
-  | { status: 'ready'; files: FileSummary[] }
-  | { status: 'error'; message: string };
 
-const dateFormat = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' });
-const sizeFormat = new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 });
 
-function formatSize(size: number) {
-  if (size >= 1024 * 1024) return `${sizeFormat.format(size / (1024 * 1024))} MB`;
-  if (size >= 1024) return `${sizeFormat.format(size / 1024)} KB`;
-  return `${sizeFormat.format(size)} B`;
-}
 export interface BaseDocument {
   id: string;
   title: string;

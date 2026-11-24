@@ -1,0 +1,142 @@
+.breadcrumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.breadcrumb {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+  color: var(--color-text-secondary);
+}
+
+.breadcrumbLink {
+  border-radius: var(--radius-sm);
+  padding: 0.4rem;
+  color: var(--color-text-secondary);
+  overflow-wrap: anywhere;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.breadcrumbLink[data-current] {
+  color: var(--color-text-primary);
+  font-weight: 600;
+  cursor: default;
+}
+
+.breadcrumbLink[data-hovered] {
+  text-decoration: underline;
+}
+
+.breadcrumbLink[data-focus-visible],
+.tree[data-focus-visible],
+.chevron[data-focus-visible] {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+.treePanel {
+  min-width: 0;
+  padding: 1rem 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  background: var(--color-bg-primary);
+  align-self: start;
+  position: sticky;
+  top: 1rem;
+}
+
+.treeHeading {
+  margin: 0 0.5rem 0.75rem;
+  font-size: 1rem;
+}
+
+.tree {
+  overflow: auto;
+  max-height: 65vh;
+  min-height: 2.5rem;
+  outline: none;
+}
+
+.treeItem {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 2.75rem;
+  padding-block: 0.35rem;
+  padding-inline: calc(0.35rem + (var(--tree-item-level) - 1) * 1rem) 0.5rem;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  outline: none;
+}
+
+.treeItem[data-hovered] {
+  background: var(--color-bg-surface);
+}
+
+.treeItem[data-selected] {
+  color: #185abd;
+  background: #edf3ff;
+}
+
+.treeItem[data-focus-visible] {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: -2px;
+}
+
+.chevron,
+.chevronSpacer {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 1.5rem;
+  width: 1.5rem;
+  height: 1.75rem;
+}
+
+.chevron {
+  border: 0;
+  padding: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.chevron[data-disabled] {
+  visibility: hidden;
+}
+
+.treeItem[data-expanded] .chevron svg {
+  transform: rotate(90deg);
+}
+
+.treeItem > svg {
+  flex-shrink: 0;
+}
+
+.folderIcon {
+  color: #b58114;
+}
+
+.folderName {
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
+@media (max-width: 63.999rem) {
+  .treePanel {
+    position: static;
+  }
+  .tree {
+    max-height: 16rem;
+  }
+}

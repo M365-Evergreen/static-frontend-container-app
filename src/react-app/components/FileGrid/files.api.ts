@@ -1,4 +1,8 @@
-import { filesPageSize, type FileSummary } from "../../../shared/files.ts";
+import {
+  fileKeyError,
+  filesPageSize,
+  type FileSummary,
+} from "../../../shared/files.ts";
 import { readApiError } from "../../chat/chat.api.ts";
 
 function fileSummary(value: unknown): value is FileSummary {
@@ -35,7 +39,9 @@ function parseFiles(payload: unknown, limit: number): FileSummary[] {
 export async function loadFiles(signal: AbortSignal): Promise<FileSummary[]> {
   const response = await fetch("/api/files", { signal, cache: "no-store" });
   if (!response.ok) throw new Error(await readApiError(response));
-  return parseFiles(await response.json(), 5);
+  return parseFiles(await response.json(), 5).filter(
+    (file) => !file.key.endsWith("/"),
+  );
 }
 
 export async function loadAllFiles(
@@ -84,4 +90,73 @@ export async function loadAllFiles(
 
 export function fileDownloadUrl(key: string): string {
   return `/api/files/download?${new URLSearchParams({ key })}`;
+}
+
+export class FileConflictError extends Error {
+  constructor(
+    message: string,
+    readonly etag: string,
+  ) {
+    super(message);
+    this.name = "FileConflictError";
+  }
+}
+
+export async function saveBucketEntry(
+  key: string,
+  content: Blob | null,
+  signal: AbortSignal,
+  etag?: string,
+): Promise<FileSummary> {
+  const folder = content === null;
+  const invalidKey = fileKeyError(key, folder);
+  if (invalidKey) throw new Error(invalidKey);
+  const response = await fetch(
+    `/api/files/${folder ? "folder" : "upload"}?${new URLSearchParams({ key })}`,
+    {
+      method: folder ? "POST" : "PUT",
+      headers: {
+        ...(!folder
+          ? { "Content-Type": content.type || "application/octet-stream" }
+          : {}),
+        ...(etag ? { "If-Match": etag } : {}),
+      },
+      ...(content === null ? {} : { body: content }),
+      signal,
+      cache: "no-store",
+    },
+  );
+  if (response.status === 409 && !folder) {
+    const payload: unknown = await response.json();
+    if (
+      typeof payload === "object" &&
+      payload !== null &&
+      "error" in payload &&
+      typeof payload.error === "object" &&
+      payload.error !== null &&
+      "message" in payload.error &&
+      typeof payload.error.message === "string" &&
+      "etag" in payload.error &&
+      typeof payload.error.etag === "string"
+    ) {
+      throw new FileConflictError(payload.error.message, payload.error.etag);
+    }
+    throw new Error(
+      "The file changed during this operation. Review the bucket and try again.",
+    );
+  }
+  if (!response.ok) throw new Error(await readApiError(response));
+  const payload: unknown = await response.json();
+  if (
+    typeof payload !== "object" ||
+    payload === null ||
+    !("file" in payload) ||
+    !fileSummary(payload.file) ||
+    payload.file.key !== key
+  ) {
+    throw new Error(
+      "The server returned an invalid saved file. Refresh the bucket before retrying.",
+    );
+  }
+  return payload.file;
 }

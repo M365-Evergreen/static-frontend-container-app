@@ -6,6 +6,8 @@ import { AboutPage } from "../pages/AboutPage";
 import { NotFoundPage } from "../pages/NotFoundPage";
 import { AgentPage } from "../pages/AgentPage/AgentPage";
 import { DocumentsPage } from "../pages/DocumentsPage/DocumentsPage";
+import { SettingsPage } from "../pages/SettingsPage/SettingsPage";
+
 import BrowserToolsLayout from "../browser-tools/BrowserToolsLayout";
 import ToolCatalog from "../browser-tools/components/ToolCatalog";
 import ToolNotFound from "../browser-tools/components/ToolNotFound";
@@ -44,6 +46,7 @@ const router = createBrowserRouter([
       { path: "/about", element: <AboutPage /> },
       { path: "/agent", element: <AgentPage /> },
       { path: "/documents", element: <DocumentsPage /> },
+      { path: "/admin/dashboard/settings", element: <SettingsPage /> },
       {
         path: "/browser-tools",
         element: <BrowserToolsLayout />,

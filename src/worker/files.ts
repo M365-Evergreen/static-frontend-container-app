@@ -1,5 +1,6 @@
 import {
   filesPageSize,
+  fileKeyError,
   type FilesPageResponse,
   type FilesResponse,
 } from "../shared/files.ts";
@@ -168,4 +169,134 @@ export async function downloadFile(
   headers.set("Cache-Control", "private, no-store");
   headers.set("X-Content-Type-Options", "nosniff");
   return new Response(object.body, { headers });
+}
+
+interface WriteBucket {
+  put(
+    key: string,
+    body: ReadableStream | Uint8Array,
+    options: {
+      onlyIf: Headers;
+      httpMetadata: { contentType: string };
+    },
+  ): Promise<{ key: string; size: number; uploaded: Date } | null>;
+  head(key: string): Promise<{ httpEtag: string } | null>;
+}
+
+export async function writeFile(
+  request: Request,
+  bucket: WriteBucket,
+  folder = false,
+): Promise<Response> {
+  const method = folder ? "POST" : "PUT";
+  if (request.method !== method) {
+    const response = errorResponse(
+      new SessionError(
+        "method_not_allowed",
+        `Use ${method} for this operation.`,
+        405,
+      ),
+    );
+    response.headers.set("Allow", method);
+    return response;
+  }
+  const url = new URL(request.url);
+  const origin = request.headers.get("Origin");
+  if (
+    (origin !== null && origin !== url.origin) ||
+    request.headers.get("Sec-Fetch-Site") === "cross-site"
+  ) {
+    return errorResponse(
+      new SessionError(
+        "invalid_origin",
+        "Files can only be changed from this application.",
+        403,
+      ),
+    );
+  }
+  const key = url.searchParams.get("key") ?? "";
+  const invalidKey = fileKeyError(key, folder);
+  if (invalidKey) {
+    return errorResponse(new SessionError("invalid_file_key", invalidKey, 400));
+  }
+  if (folder && request.body !== null) {
+    return errorResponse(
+      new SessionError(
+        "invalid_folder",
+        "Folder creation must not include file content.",
+        400,
+      ),
+    );
+  }
+  const expectedEtag = request.headers.get("If-Match");
+  if (
+    expectedEtag !== null &&
+    (folder || !/^"[^"\s,]+"$/.test(expectedEtag) || expectedEtag === '"*"')
+  ) {
+    return errorResponse(
+      new SessionError(
+        "invalid_precondition",
+        "Replacement requires the current file's exact ETag.",
+        400,
+      ),
+    );
+  }
+  const onlyIf = new Headers(
+    expectedEtag === null
+      ? { "If-None-Match": "*" }
+      : { "If-Match": expectedEtag },
+  );
+  try {
+    const object = await bucket.put(key, request.body ?? new Uint8Array(), {
+      onlyIf,
+      httpMetadata: {
+        contentType: folder
+          ? "application/x-directory"
+          : request.headers.get("Content-Type") || "application/octet-stream",
+      },
+    });
+    if (!object) {
+      const current = await bucket.head(key);
+      return Response.json(
+        {
+          error: {
+            code: folder
+              ? "folder_exists"
+              : expectedEtag === null && current
+                ? "file_exists"
+                : "file_changed",
+            message: folder
+              ? "This folder already exists."
+              : expectedEtag === null && current
+                ? "A file with this path already exists."
+                : "The file changed during this operation. Review it and try again.",
+            etag: current?.httpEtag ?? null,
+          },
+        },
+        { status: 409, headers: { "Cache-Control": "no-store" } },
+      );
+    }
+    return Response.json(
+      {
+        file: {
+          key: object.key,
+          size: object.size,
+          uploaded: object.uploaded.toISOString(),
+        },
+      },
+      {
+        status: expectedEtag === null ? 201 : 200,
+        headers: { "Cache-Control": "no-store" },
+      },
+    );
+  } catch {
+    console.error("R2 file write failed.");
+    return errorResponse(
+      new SessionError(
+        "storage_unavailable",
+        "The file or folder could not be saved. Check the bucket and try again.",
+        503,
+      ),
+    );
+  }
 }

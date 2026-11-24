@@ -3,7 +3,16 @@ import { SessionStore } from "./session-store.ts";
 import { SessionCoordinator, errorResponse, uuidHeader } from "./session.ts";
 import { SessionError } from "./session-store.ts";
 import { prepareContainer } from "./container-ready.ts";
-import { downloadFile, listFiles } from "./files.ts";
+import { downloadFile, listFiles, writeFile } from "./files.ts";
+import {
+  indexUploadedObjectAsync,
+  reconcileBucket,
+  drainPending,
+  searchFiles,
+} from "./fileIndex";
+
+
+
 
 export class AgentContainer extends Container<Env> {
   defaultPort = 8080;
@@ -61,14 +70,37 @@ export class AgentContainer extends Container<Env> {
 }
 
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
+    if (request.method === "PUT" && url.pathname.startsWith("/upload/")) {
+      const key = url.pathname.slice("/upload/".length);
+      await env.R2.put(key, request.body, {
+        httpMetadata: { contentType: request.headers.get("content-type") ?? undefined },
+      });
+      indexUploadedObjectAsync(env, key, ctx);        // strategy 1
+      return new Response("uploaded", { status: 201 });
+    }
+    if (url.pathname === "/api/files/search") {
+      return Response.json(await searchFiles(env, url.searchParams.get("q") ?? ""));
+    }
+    if (url.pathname === "/api/files/index") {
+      return Response.json(await reconcileBucket(env));
+    }
+    if (url.pathname === "/api/files/drain") {
+      return Response.json(await drainPending(env, { limit: 200 }));
+    }
 
     if (url.pathname === "/api/files") {
       return listFiles(request, env.R2);
     }
     if (url.pathname === "/api/files/download") {
       return downloadFile(request, env.R2);
+    }
+    if (url.pathname === "/api/files/upload") {
+      return writeFile(request, env.R2);
+    }
+    if (url.pathname === "/api/files/folder") {
+      return writeFile(request, env.R2, true);
     }
 
     if (url.pathname.startsWith("/api/")) {

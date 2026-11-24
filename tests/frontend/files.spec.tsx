@@ -32,6 +32,17 @@ describe('homepage files', () => {
     expect(await screen.findByText('No files are available in this bucket.')).toBeTruthy();
   });
 
+  it('does not present folder markers as downloadable homepage files', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => Response.json({
+      files: [{ key: 'empty/', size: 0, uploaded: files[0]?.uploaded }, files[0]],
+    })));
+    render(<FileGrid />);
+    const grid = await screen.findByRole('grid', { name: 'Files' });
+    await waitFor(() => expect(within(grid).getAllByRole('row')).toHaveLength(1));
+    expect(within(grid).queryByText('empty/')).toBeNull();
+    expect(within(grid).getByText('folder/document-0.pdf')).toBeTruthy();
+  });
+
   it('surfaces storage errors and retries instead of displaying placeholder files', async () => {
     vi.stubGlobal('fetch', vi.fn()
       .mockResolvedValueOnce(Response.json({ error: { message: 'Files could not be loaded. Try again.' } }, { status: 503 }))

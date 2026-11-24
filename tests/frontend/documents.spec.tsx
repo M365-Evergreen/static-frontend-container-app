@@ -101,7 +101,7 @@ describe("bucket document browsing", () => {
     });
     expect(within(table).getAllByRole("row")).toHaveLength(2);
     expect(
-      within(table).getByRole("link", { name: "Q&A #1.pdf" }),
+      within(table).getByRole("button", { name: "Q&A #1.pdf" }),
     ).toBeTruthy();
     fireEvent.change(screen.getByRole("searchbox", { name: "Search files" }), {
       target: { value: "COVER" },
@@ -112,13 +112,15 @@ describe("bucket document browsing", () => {
       ),
     ).toBeTruthy();
     await user.click(screen.getByRole("radio", { name: "Images (1)" }));
-    expect(within(table).getByRole("link", { name: "cover.png" })).toBeTruthy();
+    expect(
+      within(table).getByRole("button", { name: "cover.png" }),
+    ).toBeTruthy();
     await user.click(screen.getByRole("button", { name: "Clear file search" }));
     await user.click(screen.getByRole("radio", { name: "All files (7)" }));
     expect(within(table).getAllByRole("row")).toHaveLength(8);
     await user.click(screen.getByRole("radio", { name: "Documents (1)" }));
     expect(
-      within(table).getByRole("link", { name: "Proposal.DOCX" }),
+      within(table).getByRole("button", { name: "Proposal.DOCX" }),
     ).toBeTruthy();
   });
 
@@ -135,7 +137,7 @@ describe("bucket document browsing", () => {
     ).toBe("ascending");
     const first = within(table).getAllByRole("row")[1];
     if (!first) throw new Error("The first file row is missing.");
-    expect(within(first).getByRole("link", { name: "README" })).toBeTruthy();
+    expect(within(first).getByRole("button", { name: "README" })).toBeTruthy();
   });
 
   it("does not show partial results when a later page fails, and retries an empty bucket honestly", async () => {
