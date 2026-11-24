@@ -1,28 +1,20 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-<<<<<<< HEAD
-  "name": "static-frontend-container-app",
+  "name": "paulibaby-agent",
   "main": "src/worker/index.ts",
-  "compatibility_date": "2026-03-01",
-  "compatibility_flags": ["nodejs_compat"],
-  "secrets": {
-    "required": ["OPENAI_API_KEY"]
-  },
-  "assets": {
-    "binding": "ASSETS",
-=======
-  "name": "static-frontend-container-appr",
-  "main": "src/worker/index.ts",
-  "compatibility_date": "2026-03-01",
+  "compatibility_date": "2026-08-18",
   "compatibility_flags": [
     "nodejs_compat"
   ],
+  "observability": { "enabled": true },
   "vars": {
-    "OPENAI_MODEL": "gpt-4.1-mini"
+    "LLM_PROVIDER": "gemini",
+    "LLM_MODEL": "gemini-3.8-flash",
+    "KNOWLEDGE_MCP_URL": "https://9904ca51-56e6-48cd-ae7e-3e0f154d2724.search.ai.cloudflare.com/mcp"
   },
   "secrets": {
     "required": [
-      "OPENAI_API_KEY"
+      "LLM_API_KEY"
     ]
   },
   "assets": {
@@ -30,7 +22,6 @@
     "run_worker_first": [
       "/api/*"
     ],
->>>>>>> e84d3c3 (feat: implement session management with SQLite storage)
     "not_found_handling": "single-page-application"
   },
   "containers": [
@@ -49,18 +40,21 @@
       }
     ]
   },
-<<<<<<< HEAD
-  "migrations": [
-    {
-      "tag": "v1",
-      "new_sqlite_classes": ["AgentContainer"]
-    }
-  ]
-}
-=======
   "ai": {
     "binding": "AI"
   },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_id": "e33c33ce-55ad-49b4-8d89-02e1718d1d03"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "R2",
+      "bucket_name": "paulibaby-agent"
+    }
+  ],
   "migrations": [
     {
       "tag": "v1",
@@ -70,4 +64,3 @@
     }
   ]
 }
->>>>>>> e84d3c3 (feat: implement session management with SQLite storage)

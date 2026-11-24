@@ -3,25 +3,18 @@
 React + Vite + TypeScript frontend, a Cloudflare Worker gateway, and a Python 3.12
 FastAPI backend running in Cloudflare Containers.
 
-<<<<<<< HEAD
-**Current status:** the frontend is a starter demo and the backend streams
-simulated planner, researcher, and synthesizer steps. OpenAI integration, the chat
-UI, and durable conversation history are planned, not implemented. Python session
-memory currently survives only while its container stays warm.
-
-See [the MVP implementation plan](docs/mvp-implementation-plan.md) and
-[phase one tasks](docs/MVP-01.md).
-=======
 **Current status:** the frontend and backend run real,
-sequential OpenAI planner, analyst/researcher, and synthesizer agents. Completed conversation
+sequential planner, analyst/researcher, and synthesizer agents using explicitly
+selected Gemini or NVIDIA-hosted models. No provider or model is preferred. Completed conversation
 history and request deduplication are persisted in the session's Durable Object.
+The researcher can retrieve evidence from a configured Cloudflare AI Search MCP
+knowledge source before analysis.
 The chat UI is implemented and deployment access hardening remains the final
 account-policy prerequisite.
 
 See [the MVP implementation plan](docs/mvp-implementation-plan.md) and
 [phase one tasks](docs/MVP-01.md), [durable-session tasks](docs/MVP-02.md), and
 [real-agent tasks](docs/MVP-03.md).
->>>>>>> e84d3c3 (feat: implement session management with SQLite storage)
 
 ## Architecture
 
@@ -34,28 +27,12 @@ Cloudflare Worker
   |
   | getContainer(env.AGENT_CONTAINER, sessionId)
   v
-<<<<<<< HEAD
-AgentContainer Durable Object -> FastAPI container on port 8080
-```
-
-The Worker serves assets through `ASSETS` and forwards `/api/*` to
-`AGENT_CONTAINER`. Requests with the same session ID address the same container.
-Containers sleep after ten minutes of inactivity. Their memory and filesystem
-are ephemeral; the SQLite-backed Durable Object binding does not automatically
-persist Python state.
-
-The scaffold accepts a session ID from `x-session-id` or a `sessionId` query
-parameter and otherwise uses `default-session`. Until session validation is
-implemented, always send a unique `x-session-id` header: query-only IDs are not
-currently forwarded to Python. This scaffold is not ready for a public paid-model
-endpoint.
-=======
 AgentContainer Durable Object
   |-- authoritative history, completed request IDs, active-run lease
   |
   | validated run payload with stored history
   v
-FastAPI container on port 8080 -> OpenAI Responses API (stateless execution)
+FastAPI container on port 8080 -> selected model provider (stateless execution)
 ```
 
 The Worker serves assets through `ASSETS` and routes `/api/*` to
@@ -69,35 +46,27 @@ All conversation endpoints require `x-session-id`; there is no shared default or
 query-string alternative. UUIDs identify conversations, not authenticated users:
 someone who knows a session UUID can access that conversation. Add private access
 and ownership controls before exposing sensitive history or a paid-model endpoint.
->>>>>>> e84d3c3 (feat: implement session management with SQLite storage)
 
 ## Project structure
 
 ```text
 .github/                  Repository and scoped contributor instructions
 agents/
-<<<<<<< HEAD
-  main.py                 FastAPI health endpoint and simulated SSE chat
-=======
-  main.py                 FastAPI endpoints and OpenAI client lifespan
-  orchestrator.py         Bounded sequential OpenAI calls and typed SSE events
-  definitions.py          Planner, model-only analyst, and synthesizer instructions
+  main.py                 FastAPI endpoints and provider-client lifespan
+  orchestrator.py         Bounded sequential model calls and typed SSE events
+  providers.py            Async Gemini and NVIDIA-hosted model adapters
+  definitions.py          Planner, analyst, and synthesizer instructions
+  knowledge.py            Bounded Cloudflare AI Search MCP retrieval
   models.py               Pydantic input, output, configuration, and event models
   limits.py               Input, output, deadline, and agent-call bounds
   errors.py               Sanitized provider/configuration errors
   tests/                  Backend and opt-in live Worker acceptance tests
->>>>>>> e84d3c3 (feat: implement session management with SQLite storage)
   pyproject.toml          Python dependencies and development tools
   uv.lock                 Authoritative Python dependency lock
 container/
   Dockerfile              Multi-stage, non-root Python runtime image
 docs/                     MVP plan and phase tasks
 src/
-<<<<<<< HEAD
-  react-app/              React + TypeScript starter frontend
-  worker/
-    index.ts              Worker router and AgentContainer class
-=======
   react-app/              React + TypeScript streaming chat frontend
   worker/
     index.ts              Worker router and AgentContainer class
@@ -105,7 +74,6 @@ src/
     session-store.ts      SQLite history, leases, and atomic request deduplication
     session-stream.ts     Chunk-safe backend SSE parsing
 tests/worker/             Worker session regression tests
->>>>>>> e84d3c3 (feat: implement session management with SQLite storage)
 .dockerignore             Restricts the image build context; excludes secrets
 pnpm-lock.yaml            Authoritative JavaScript dependency lock
 vite.config.ts            React and Cloudflare Vite plugins
@@ -136,22 +104,18 @@ not upgraded to the newest releases. Install pnpm using the
 pnpm install --frozen-lockfile
 ```
 
-Create an ignored `.dev.vars` file beside `wrangler.json` containing your local
-`OPENAI_API_KEY`. Do not commit or paste secret values into source or command
-arguments. The secret name is declared in `secrets.required` so type generation
-<<<<<<< HEAD
-does not depend on a local secret file. The current simulated pipeline does not
-call OpenAI; missing local secrets may produce a development warning.
-=======
-does not depend on a local secret file. Chat now requires a working key and incurs
-OpenAI usage charges. Missing configuration returns HTTP 503; there is no
-simulated fallback. Container `/health` remains available without a key.
+Create an ignored `.dev.vars` file beside `wrangler.json` containing `LLM_PROVIDER`,
+`LLM_MODEL`, and `LLM_API_KEY`. The key must belong to the selected provider.
+Do not commit or paste secret values into source or command arguments. The neutral
+secret name is declared in `secrets.required` so type generation does not depend
+on a local secret file. Chat requires valid provider configuration and may incur
+usage charges. Missing or invalid configuration returns HTTP 503; there is no
+provider/model fallback. Container `/health` remains available without a key.
 
 Vite may copy `.dev.vars` into the ignored Worker build directory for local
 preview. Never commit or upload those files as generic build artifacts; only
 `dist/client` is the public static-assets directory. Docker's build context
 excludes local secret files.
->>>>>>> e84d3c3 (feat: implement session management with SQLite storage)
 
 In a supported Linux/macOS shell (or WSL2 on Windows), with Docker running:
 
@@ -163,36 +127,67 @@ pnpm run dev
 Vite serves the frontend and runs the Worker locally. The first API request starts
 the local container; frontend requests use relative `/api/*` paths.
 
-<<<<<<< HEAD
-=======
-## OpenAI model and execution limits
+## Model providers and execution limits
 
-`OPENAI_MODEL` is a non-secret Wrangler variable, passed into the container
-alongside the `OPENAI_API_KEY` secret. The selected default is `gpt-4.1-mini`.
-OpenAI currently marks this model deprecated while listing Responses API support;
-review [its model documentation](https://developers.openai.com/api/docs/models/gpt-4.1-mini)
-before choosing it for a deployment. There is no automatic model substitution.
+`LLM_PROVIDER` and `LLM_MODEL` are non-secret Wrangler variables, passed into the
+container alongside the `LLM_API_KEY` secret. Both variables are intentionally
+blank in `wrangler.json`: select them before deployment. No provider or model is
+preferred, and requests never fall back to another provider when one fails.
 
-To change the deployment model, edit `vars.OPENAI_MODEL` in `wrangler.json` and
-regenerate types. For a local override, set `OPENAI_MODEL` in the ignored
-`.dev.vars` file. Direct Python development reads these two environment
+| `LLM_PROVIDER` | Example `LLM_MODEL` from the repository | `LLM_API_KEY` |
+| --- | --- | --- |
+| `gemini` | `gemini-4-hydrogen` (also accepts a `models/` prefix) | Google Gemini API key |
+| `nvidia` | `mistralai/mistral-large-4-1t-a52b` | NVIDIA API key |
+
+Gemini uses the installed Google Gen AI SDK's asynchronous GenerateContent API.
+NVIDIA-hosted models use `https://integrate.api.nvidia.com/v1/chat/completions`
+through an async HTTP client; this is not the direct Mistral API. Model
+availability and access depend on your provider account. `clairic.py` is empty
+and does not yet define a provider integration.
+
+To select the deployment provider/model, edit `vars.LLM_PROVIDER` and
+`vars.LLM_MODEL` in `wrangler.json` and regenerate types. For local overrides,
+set these variables in the ignored `.dev.vars` file, along with `LLM_API_KEY`.
+Direct Python development reads the same three environment
 variables; it does not automatically load the Worker's `.dev.vars`. Restart a
 warm container after changing configuration.
 
-Each run makes exactly three sequential Responses API calls, with SDK retries
-disabled, `store=False`, and no tools. Each call receives authoritative completed
-history, the current prompt, and all preceding agent results. Analyst and final
-outputs explicitly state that analysis is model-only, without live source
-verification. Code Mode, browser tools, web search, and MCP tools are not enabled.
+Each run makes exactly three sequential model calls, with retries and SDK
+continuation disabled and no provider-side tools. Gemini uses `store=False`; NVIDIA requests
+have no provider-managed conversation chain. Each call receives authoritative completed
+history, the current prompt, and all preceding agent results. When
+`KNOWLEDGE_MCP_URL` is configured, one read-only MCP `search` runs after the planner
+and before the researcher. Only the current prompt is sent to that endpoint, never
+stored history or `LLM_API_KEY`. Retrieved chunks and their source metadata are
+supplied to the researcher and synthesizer as untrusted evidence with `K1`, `K2`,
+etc. citation identifiers. Source instructions must not override agent roles.
+
+`vars.KNOWLEDGE_MCP_URL` in `wrangler.json` points to the supplied Cloudflare AI
+Search `/mcp` endpoint. It is non-secret, uses HTTPS, and requires no authentication
+on the current public endpoint. Direct Python development must set this environment
+variable separately; `.dev.vars` can override it for Worker development. Set the
+Worker variable to an empty string to disable retrieval, or leave it unset for
+standalone Python. Restart warm containers after configuration changes.
+Protect or disable the public endpoint before indexing sensitive content; see
+[Cloudflare's MCP access guidance](https://developers.cloudflare.com/ai-search/api/search/mcp/).
+
+Analysis and answers label knowledge-assisted versus model-only execution.
+A successful search with no matching chunks explicitly reports that outcome and
+continues with model knowledge; retrieval errors do not silently fall back.
+Indexed knowledge is not live web verification. Code Mode, general browser/web
+search, attachments, and command execution remain unavailable.
 
 | Limit | Bound |
 | --- | --- |
 | Public JSON body | 128 KiB |
 | Prompt | 8,000 Unicode code points |
 | Stored history supplied to a run | 100 messages and 24,000 Unicode code points |
-| Text context per OpenAI call, including instructions and earlier agent results | 50,000 Unicode code points |
+| Text context per model call, including instructions and earlier agent results | 50,000 Unicode code points |
 | Output per agent | 1,024 output tokens and 8,000 Unicode code points including labels |
-| OpenAI request timeout | 30 seconds, no SDK retries |
+| Model request timeout | 30 seconds, no retries or automatic continuation |
+| Knowledge search | One query; at most 5 chunks; no query rewrite or reranking |
+| MCP response / retrieved context | 64 KiB per HTTP response / 12,000 Unicode code points |
+| Knowledge lookup deadline | 10 seconds including MCP initialization and cleanup, within the pipeline deadline |
 | Entire Python pipeline | 90 seconds |
 | Worker run including container startup | 120 seconds |
 | Agent-call budget | `max_turns` from 3 to 10; default 5; exactly 3 calls |
@@ -202,19 +197,11 @@ are not accepted as success. When stored history exceeds its limit, it remains
 retrievable; start a new session rather than sending an oversized conversation.
 Failed or cancelled runs never commit a completed exchange.
 
->>>>>>> e84d3c3 (feat: implement session management with SQLite storage)
 ## Checks and build
 
 ```powershell
 pnpm run typecheck
 pnpm run lint
-<<<<<<< HEAD
-pnpm run build
-```
-
-Typechecking covers `tsconfig.app.json`, `tsconfig.node.json`, and
-`tsconfig.worker.json`. ESLint checks source and configuration; generated
-=======
 pnpm run test:worker
 pnpm run build
 ```
@@ -223,13 +210,12 @@ Typechecking covers `tsconfig.app.json`, `tsconfig.node.json`,
 `tsconfig.worker.json`, and `tsconfig.tests.json`. Worker tests use Node's built-in
 test runner and SQLite; running them requires Node.js 22.13+ with `node:sqlite`
 support. ESLint checks source and configuration; generated
->>>>>>> e84d3c3 (feat: implement session management with SQLite storage)
 Cloudflare declarations are excluded. Rerun `pnpm run cf-typegen` after binding,
 secret-name, or compatibility configuration changes. Never edit generated
 declarations manually.
 
 The Vite build produces frontend assets in `dist/client` and a Worker deployment
-bundle/configuration under `dist/static_frontend_container_appr`. Build output is
+bundle/configuration under `dist/paulibaby_agent`. Build output is
 generated; edit `wrangler.json`, not the generated configuration.
 
 For Python development:
@@ -238,10 +224,7 @@ For Python development:
 uv sync --project agents --locked --python 3.12
 uv run --project agents --locked ruff check agents
 uv run --project agents --locked ruff format --check agents
-<<<<<<< HEAD
-=======
 uv run --project agents --locked pytest agents/tests
->>>>>>> e84d3c3 (feat: implement session management with SQLite storage)
 ```
 
 After intentionally changing Python dependencies, regenerate `agents/uv.lock`
@@ -270,8 +253,8 @@ with Ctrl+C when finished.
 
 ## Deployment
 
-The configured Worker name is **`static-frontend-container-appr`**, including the
-trailing `r`. Bindings are `ASSETS` and `AGENT_CONTAINER` pointing to the exported
+The configured Worker name is **`paulibaby-agent`**. Bindings are `ASSETS` and
+`AGENT_CONTAINER` pointing to the exported
 `AgentContainer` class; SQLite migration `v1` is retained.
 
 Authenticate and verify the intended account:
@@ -281,7 +264,7 @@ pnpm exec wrangler login
 pnpm exec wrangler whoami
 ```
 
-Configure `OPENAI_API_KEY` through the Cloudflare dashboard or Wrangler's protected
+Configure the selected provider's `LLM_API_KEY` through the Cloudflare dashboard or Wrangler's protected
 interactive secret input. `wrangler secret put` creates a Worker version and
 deploys immediately; do not treat it as a local-only setup command.
 
@@ -306,21 +289,14 @@ container health probe.
 
 ### `POST /api/chat`
 
-<<<<<<< HEAD
-Streams simulated agent steps as `text/event-stream`.
-=======
 Streams genuine agent outputs followed by durable completion as `text/event-stream`.
->>>>>>> e84d3c3 (feat: implement session management with SQLite storage)
 
 Headers:
 
 ```text
 Content-Type: application/json
 x-session-id: <session-uuid>
-<<<<<<< HEAD
-=======
 x-request-id: <request-uuid>
->>>>>>> e84d3c3 (feat: implement session management with SQLite storage)
 ```
 
 Request:
@@ -332,10 +308,6 @@ Request:
 }
 ```
 
-<<<<<<< HEAD
-The current backend accepts `max_turns` from 1 to 10, defaults to 5, and executes
-at most the three placeholder agents.
-=======
 The public payload accepts only `prompt` and `max_turns`. Both headers must be
 UUIDs; their hexadecimal case is normalized. `sessionId` query parameters,
 missing IDs, blank prompts, client-supplied history, and invalid limits return
@@ -343,30 +315,24 @@ HTTP 400. Size limits return HTTP 413. `max_turns` must be an integer from 3 to 
 the default is 5 and exactly three agents run. Values below 3 are rejected before
 any provider call rather than returning partial work. Only the Durable Object supplies internal
 history and request metadata to Python.
->>>>>>> e84d3c3 (feat: implement session management with SQLite storage)
 
 Example SSE frames:
 
 ```text
-<<<<<<< HEAD
-data: {"turn": 1, "agent": "planner_agent", "status": "running", "output": "..."}
-
-data: {"status": "done", "final_output": "...", "history_length": 2}
-
-```
-
-The starter frontend's `/api/` demo does not implement this chat contract; the chat
-UI belongs to a later MVP phase.
-=======
 data: {"turn": 1, "agent": "planner_agent", "status": "running", "output": "<planner result>"}
 
-data: {"turn": 2, "agent": "research_agent", "status": "running", "output": "Model-only analysis; no live browsing or source verification.\n\n<analysis>"}
+data: {"turn": 2, "agent": "research_agent", "status": "running", "output": "Knowledge-assisted analysis; indexed sources, not live web verification.\n\n<analysis>"}
 
-data: {"turn": 3, "agent": "synthesizer_agent", "status": "running", "output": "Model-only synthesis; no live sources verified.\n\n<answer>"}
+data: {"turn": 3, "agent": "synthesizer_agent", "status": "running", "output": "Knowledge-assisted answer; indexed sources, not live web verification.\n\n<answer>"}
 
 data: {"status": "done", "request_id": "<request-uuid>", "final_output": "...", "history_length": 2}
 
 ```
+
+These knowledge-assisted labels apply when search returns matching chunks.
+Without configured retrieval, outputs retain model-only labels; an empty search
+uses `No matching knowledge sources; model-only analysis/answer.` labels.
+No token-level or separate tool SSE events are added.
 
 The completed user/assistant pair and request ID are committed atomically before
 `done` is sent. Repeating the same request ID and input replays that stored `done`
@@ -391,7 +357,8 @@ data: {"status": "error", "code": "run_cancelled", "message": "The run was cance
 
 Configuration, authentication, rate/quota, connectivity, provider timeout,
 refusal, incomplete output, and pipeline deadline failures have explicit error
-codes. Raw OpenAI errors, credentials, prompts, and model outputs are not logged
+codes. Retrieval failures use `knowledge_error`, `knowledge_timeout`, or
+`knowledge_limit`. Raw provider errors, credentials, prompts, and model outputs are not logged
 by the application's operational error handlers. Only all three successful
 stages followed by a valid completion can become stored history.
 
@@ -432,13 +399,13 @@ for history restoration after reload.
 
 ## Live session checks
 
-Offline tests always use an intercepted OpenAI HTTP transport and do not incur
+Offline tests exercise both providers with intercepted native HTTP transports and do not incur
 provider charges. With the local Worker running and a valid local key, explicitly
 opt into the bounded live agent acceptance test (six model calls):
 
 ```powershell
 $env:SESSION_API_BASE_URL = "http://127.0.0.1:5173"
-$env:RUN_LIVE_OPENAI = "true"
+$env:RUN_LIVE_MODELS = "true"
 uv run --project agents --locked pytest agents/tests/test_live_agents.py
 ```
 
@@ -457,4 +424,3 @@ but does not restart a container.
 
 Cloudflare agent tooling was assessed for this architecture; see
 [phase two's tooling assessment](docs/MVP-02.md#cloudflare-agent-options).
->>>>>>> e84d3c3 (feat: implement session management with SQLite storage)

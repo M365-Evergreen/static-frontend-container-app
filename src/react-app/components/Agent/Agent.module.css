@@ -1,0 +1,75 @@
+.shell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  height: calc(100dvh - 6rem);
+  min-height: 36rem;
+  padding-top: 0.5rem;
+}
+
+.workspace {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-md);
+  width: 100%;
+  max-width: 52rem;
+  min-height: 0;
+  margin-inline: auto;
+}
+
+.workspaceEmpty {
+  justify-content: center;
+  padding-bottom: clamp(1rem, 10dvh, 7rem);
+}
+
+.empty {
+  flex-shrink: 0;
+}
+
+.status {
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+}
+
+.status:empty {
+  display: none;
+}
+
+.notice,
+.error {
+  margin: 0;
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-surface);
+  font-size: 0.875rem;
+}
+
+.error {
+  border-inline-start: 4px solid var(--color-text-primary);
+}
+
+.error p {
+  margin-bottom: var(--space-sm);
+}
+
+@media (max-width: 47.999rem) {
+  .shell {
+    min-height: 32rem;
+  }
+
+  .workspaceEmpty {
+    padding-bottom: 1rem;
+  }
+}
+
+@media (max-height: 40rem) {
+  .shell {
+    height: 34rem;
+  }
+
+  .workspaceEmpty {
+    padding-bottom: 0;
+  }
+}

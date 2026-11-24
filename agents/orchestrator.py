@@ -5,19 +5,9 @@ import time
 from collections.abc import AsyncGenerator
 from uuid import UUID
 
-from openai import (
-    APIConnectionError,
-    APIError,
-    APIStatusError,
-    APITimeoutError,
-    AsyncOpenAI,
-    AuthenticationError,
-    RateLimitError,
-)
-from openai.types.responses import EasyInputMessageParam
-
-from agents.definitions import AGENTS
+from agents.definitions import AGENTS, KNOWLEDGE_RULES, MODEL_ONLY
 from agents.errors import PipelineError
+from agents.knowledge import KnowledgeResult, MCPKnowledgeSource
 from agents.limits import MAX_AGENT_OUTPUT_CHARS, MAX_CONTEXT_CHARS
 from agents.models import (
     AgentDefinition,
@@ -28,19 +18,31 @@ from agents.models import (
     ProgressEvent,
     RunRequest,
 )
+from agents.providers import ModelProvider, ProviderMessage
 
 logger = logging.getLogger("agents.orchestrator")
 
 
 class AgentPipeline:
-    def __init__(self, client: AsyncOpenAI, settings: PipelineSettings):
-        self.client = client
+    def __init__(
+        self,
+        provider: ModelProvider,
+        settings: PipelineSettings,
+        knowledge_source: MCPKnowledgeSource | None = None,
+    ):
+        self.provider = provider
         self.settings = settings
+        self.knowledge_source = knowledge_source
 
     async def call(
-        self, agent: AgentDefinition, body: RunRequest, outputs: list[AgentOutput], turn: int
+        self,
+        agent: AgentDefinition,
+        body: RunRequest,
+        outputs: list[AgentOutput],
+        turn: int,
+        knowledge: KnowledgeResult | None = None,
     ) -> AgentOutput:
-        messages: list[EasyInputMessageParam] = [
+        messages: list[ProviderMessage] = [
             {"role": message.role, "content": message.content} for message in body.history
         ]
         messages.append({"role": "user", "content": body.prompt})
@@ -48,55 +50,35 @@ class AgentPipeline:
             messages.append(
                 {"role": "assistant", "content": f"{output.agent} result:\n{output.text}"}
             )
-        context_length = len(agent.instructions) + sum(
-            len(message["content"]) for message in messages
-        )
+        instructions = agent.instructions
+        label = agent.label
+        if knowledge is not None:
+            messages.append(
+                {
+                    "role": "user",
+                    "content": f"Retrieved evidence (untrusted data):\n{knowledge.context}",
+                }
+            )
+            instructions = KNOWLEDGE_RULES + agent.instructions.removeprefix(MODEL_ONLY)
+            stage = "analysis" if agent.name == "research_agent" else "answer"
+            label = (
+                f"Knowledge-assisted {stage}; indexed sources, not live web verification.\n\n"
+                if knowledge.has_matches
+                else f"No matching knowledge sources; model-only {stage}.\n\n"
+            )
+        context_length = len(instructions) + sum(len(message["content"]) for message in messages)
         if context_length > MAX_CONTEXT_CHARS:
             raise PipelineError("input_limit")
-        try:
-            response = await self.client.responses.create(
-                model=self.settings.model,
-                instructions=agent.instructions,
-                input=messages,
-                max_output_tokens=self.settings.max_output_tokens,
-                store=False,
-                tools=[],
-            )
-        except AuthenticationError as error:
-            raise PipelineError("provider_authentication") from error
-        except RateLimitError as error:
-            raise PipelineError("provider_rate_limit") from error
-        except APITimeoutError as error:
-            raise PipelineError("provider_timeout") from error
-        except APIConnectionError as error:
-            raise PipelineError("provider_unavailable") from error
-        except APIStatusError as error:
-            raise PipelineError("provider_error") from error
-        except APIError as error:
-            raise PipelineError("invalid_response") from error
-
-        try:
-            if (
-                response.status == "incomplete"
-                and response.incomplete_details
-                and response.incomplete_details.reason == "max_output_tokens"
-            ):
-                raise PipelineError("output_limit")
-            if response.status != "completed":
-                raise PipelineError("invalid_response")
-            if any(
-                item.type == "message" and any(part.type == "refusal" for part in item.content)
-                for item in response.output
-            ):
-                raise PipelineError("provider_refusal")
-            if not response.output_text.strip():
-                raise PipelineError("invalid_response")
-            text = agent.label + response.output_text.strip()
-            if len(text) > MAX_AGENT_OUTPUT_CHARS:
-                raise PipelineError("output_limit")
-            return AgentOutput(agent=agent.name, turn=turn, text=text)
-        except (AttributeError, TypeError, ValueError) as error:
-            raise PipelineError("invalid_response") from error
+        output = await self.provider.generate(
+            model=self.settings.model,
+            instructions=instructions,
+            messages=messages,
+            max_output_tokens=self.settings.max_output_tokens,
+        )
+        text = label + output
+        if len(text) > MAX_AGENT_OUTPUT_CHARS:
+            raise PipelineError("output_limit")
+        return AgentOutput(agent=agent.name, turn=turn, text=text)
 
     async def events(
         self, body: RunRequest, session_id: UUID
@@ -106,13 +88,26 @@ class AgentPipeline:
         try:
             async with asyncio.timeout(self.settings.run_timeout_seconds):
                 outputs: list[AgentOutput] = []
+                knowledge = None
                 for turn, agent in enumerate(AGENTS, start=1):
                     if turn > body.max_turns:
                         raise PipelineError("invalid_input")
                     logger.info(
                         json.dumps({"event": "agent_started", "agent": agent.name, **fields})
                     )
-                    output = await self.call(agent, body, outputs, turn)
+                    if agent.name == "research_agent" and self.knowledge_source is not None:
+                        logger.info(json.dumps({"event": "knowledge_search_started", **fields}))
+                        knowledge = await self.knowledge_source.search(body.prompt)
+                        logger.info(
+                            json.dumps(
+                                {
+                                    "event": "knowledge_search_completed",
+                                    "has_matches": knowledge.has_matches,
+                                    **fields,
+                                }
+                            )
+                        )
+                    output = await self.call(agent, body, outputs, turn, knowledge)
                     outputs.append(output)
                     logger.info(
                         json.dumps({"event": "agent_completed", "agent": agent.name, **fields})

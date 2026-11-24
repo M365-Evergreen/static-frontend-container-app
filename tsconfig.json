@@ -3,11 +3,7 @@
 	"references": [
 		{ "path": "./tsconfig.app.json" },
 		{ "path": "./tsconfig.node.json" },
-<<<<<<< HEAD
-		{ "path": "./tsconfig.worker.json" }
-=======
 		{ "path": "./tsconfig.worker.json" },
 		{ "path": "./tsconfig.tests.json" }
->>>>>>> e84d3c3 (feat: implement session management with SQLite storage)
 	]
 }
