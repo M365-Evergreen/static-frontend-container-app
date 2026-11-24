@@ -11,6 +11,8 @@ import {
 } from "../../src/worker/session-store.ts";
 import { SessionCoordinator } from "../../src/worker/session.ts";
 import { frame } from "../../src/worker/session-stream.ts";
+import { D1ChatHistory, type HistorySink } from "../../src/worker/chat-history.ts";
+import { SqliteD1 } from "./sqlite-d1.ts";
 
 const SESSION = "11111111-1111-4111-8111-111111111111";
 const OTHER_SESSION = "22222222-2222-4222-8222-222222222222";
@@ -61,6 +63,7 @@ function request(
       "Content-Type": "application/json",
       "x-session-id": sessionId,
       "x-request-id": requestId,
+      "x-chat-owner": "test-owner",
     },
     ...(method === "POST" ? { body: JSON.stringify(body) } : {}),
   });
@@ -99,6 +102,7 @@ function harness(
   backend?: (request: Request) => Promise<Response>,
   timeout = 1000,
   database = sqlite().database,
+  sink?: HistorySink,
 ) {
   const tasks: Promise<void>[] = [];
   const payloads: RunInput[] = [];
@@ -108,7 +112,7 @@ function harness(
     payloads.push(body);
     return upstream([...pipelineProgress(), completion(body)]);
   });
-  const coordinator = new SessionCoordinator(store, run, (task) => tasks.push(task), timeout);
+  const coordinator = new SessionCoordinator(store, run, (task) => tasks.push(task), timeout, sink);
   return { coordinator, store, tasks, payloads, database };
 }
 
@@ -308,6 +312,7 @@ test("prompt and JSON size limits reject input before starting any backend calls
 
 test("oversized stored history stays available but cannot cause unbounded provider context", async () => {
   const h = harness();
+  h.store.identify(SESSION, "test-owner");
   for (let turn = 0; turn < 3; turn++) {
     const id = crypto.randomUUID();
     h.store.claim(id, { prompt: "x".repeat(6000), max_turns: 5 }, id, Date.now() + 1000, Date.now());
@@ -353,3 +358,61 @@ for (const code of ["knowledge_error", "knowledge_timeout", "knowledge_limit"]) 
     assert.equal((await events(await h.coordinator.fetch(request()))).at(-1)?.status, "done");
   });
 }
+
+test("D1 failure preserves a durable pending revision, repaired after restart without rerunning agents", async () => {
+  const db = new SqliteD1();
+  const sink = new D1ChatHistory(db);
+  db.failWrites = true;
+  const first = harness(undefined, 1000, undefined, sink);
+  assert.equal((await events(await first.coordinator.fetch(request()))).at(-1)?.code, "history_sync_failed");
+  assert.equal(first.store.history().length, 2);
+  assert.equal(first.store.pendingProjection()?.revision, 1);
+  const restarted = harness(undefined, 1000, first.database, sink);
+  assert.equal((await restarted.coordinator.fetch(request("GET", "/api/history"))).status, 503);
+  db.failWrites = false;
+  assert.equal((await restarted.coordinator.fetch(request("GET", "/api/history"))).status, 200);
+  assert.equal(restarted.store.pendingProjection(), undefined);
+  assert.equal((await events(await restarted.coordinator.fetch(request()))).at(-1)?.status, "done");
+  assert.equal(restarted.payloads.length, 0);
+  assert.equal(db.db.prepare("SELECT COUNT(*) AS count FROM chat_messages").get()?.count, 2);
+});
+
+test("deletion remains queued across D1 failure and later repair cannot resurrect old messages", async () => {
+  const db = new SqliteD1();
+  const sink = new D1ChatHistory(db);
+  const h = harness(undefined, 1000, undefined, sink);
+  await events(await h.coordinator.fetch(request()));
+  db.failWrites = true;
+  assert.equal((await h.coordinator.fetch(request("DELETE", "/api/history"))).status, 503);
+  assert.deepEqual(h.store.history(), []);
+  assert.equal(h.store.pendingProjection()?.messages.length, 0);
+  db.failWrites = false;
+  const restarted = harness(undefined, 1000, h.database, sink);
+  assert.equal((await restarted.coordinator.fetch(request("GET", "/api/history"))).status, 200);
+  assert.equal(db.db.prepare("SELECT COUNT(*) AS count FROM chat_messages").get()?.count, 0);
+  assert.equal((await sink.list("test-owner", new URL("https://app.test/api/conversations"))).conversations.length, 0);
+});
+
+test("all session operations reject a different owner and anonymous legacy sessions cannot be claimed", async () => {
+  const h = harness();
+  await events(await h.coordinator.fetch(request()));
+  for (const [method, path] of [["GET", "/api/history"], ["DELETE", "/api/history"], ["POST", "/api/chat"], ["DELETE", "/api/chat"]]) {
+    const incoming = request(method, path);
+    incoming.headers.set("x-chat-owner", "another-owner");
+    assert.equal((await h.coordinator.fetch(incoming)).status, 403);
+  }
+  const missing = request("GET", "/api/history");
+  missing.headers.delete("x-chat-owner");
+  assert.equal((await h.coordinator.fetch(missing)).status, 401);
+  assert.equal(h.store.history().length, 2);
+
+  const legacy = sqlite();
+  legacy.db.exec(`CREATE TABLE chat_session (singleton INTEGER PRIMARY KEY, session_id TEXT NOT NULL);
+    CREATE TABLE chat_messages (sequence INTEGER PRIMARY KEY, role TEXT, content TEXT, request_id TEXT);
+    INSERT INTO chat_session VALUES (1, '${SESSION}');
+    INSERT INTO chat_messages VALUES (1, 'user', 'Anonymous history', '${REQUEST}');`);
+  const old = harness(undefined, 1000, legacy.database);
+  const response = await old.coordinator.fetch(request("GET", "/api/history"));
+  assert.equal(response.status, 403);
+  assert.match(await response.text(), /legacy_session/);
+});

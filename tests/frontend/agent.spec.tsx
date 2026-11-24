@@ -2,11 +2,23 @@ import { StrictMode } from 'react';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
-import Agent from '../../src/react-app/components/Agent/Agent';
+import AgentComponent from '../../src/react-app/components/Agent/Agent';
+import { AuthContext, type AuthState } from '../../src/react-app/auth/auth-context';
 import { AgentComposer } from '../../src/react-app/components/AgentComposer/AgentComposer';
 import { Markdown } from '../../src/react-app/components/Markdown/Markdown';
 import { loadHistory } from '../../src/react-app/chat/chat.api';
 import { promptError } from '../../src/react-app/chat/chat.types';
+
+const auth: AuthState = {
+  account: { id: 'test-account', name: 'Test account' },
+  loading: false, configured: true, error: '',
+  signIn: async () => {}, signOut: async () => {},
+  request: (url, init) => fetch(url, init),
+};
+
+function Agent() {
+  return <AuthContext.Provider value={auth}><AgentComponent /></AuthContext.Provider>;
+}
 
 function history(sessionId: string, messages: unknown[] = []) {
   return Response.json({ session_id: sessionId, messages });
@@ -241,6 +253,41 @@ describe('agent conversation', () => {
     expect(signal?.aborted).toBe(true);
     await act(async () => resolve(history(sessionId)));
     expect(screen.queryByLabelText('Conversation')).toBeNull();
+  });
+
+  it('repairs a committed reply after D1 synchronisation fails without another model submission', async () => {
+    const run = streamingRun();
+    let requestId = '';
+    let stored = false;
+    const fetchMock = vi.fn(async (_url: string, init: RequestInit) => {
+      const headers = new Headers(init.headers);
+      if (init.method === 'POST') {
+        requestId = headers.get('x-request-id') ?? '';
+        return run.response;
+      }
+      return history(headers.get('x-session-id') ?? '', stored ? [
+        { sequence: 1, role: 'user', content: 'Save this', request_id: requestId },
+        { sequence: 2, role: 'assistant', content: 'Recovered saved answer', request_id: requestId },
+      ] : []);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    render(<Agent />);
+    const input = screen.getByRole('textbox', { name: 'Message' });
+    await waitFor(() => expect(input.hasAttribute('disabled')).toBe(false));
+    const user = userEvent.setup();
+    await user.type(input, 'Save this');
+    await user.click(screen.getByRole('button', { name: 'Send message' }));
+    await act(async () => {
+      stored = true;
+      run.emit({ status: 'error', code: 'history_sync_failed', message: 'D1 history could not be updated. Reload history to retry.' });
+      run.close();
+    });
+    const reload = await screen.findByRole('button', { name: 'Reload history' });
+    expect(input.hasAttribute('disabled')).toBe(true);
+    await user.click(reload);
+    expect(await screen.findByText('Recovered saved answer')).toBeTruthy();
+    expect(fetchMock.mock.calls.filter(([, init]) => init.method === 'POST')).toHaveLength(1);
+    expect(screen.queryByRole('button', { name: 'Reload history' })).toBeNull();
   });
 });
 

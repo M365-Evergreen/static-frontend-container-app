@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
@@ -5,6 +6,18 @@ import { describe, expect, it, vi } from 'vitest';
 import { AppShell } from '../../src/react-app/layouts/AppShell';
 import { AppRouter } from '../../src/react-app/routes/AppRouter';
 import { Sidebar } from '../../src/react-app/components/Sidebar/Sidebar';
+import { AuthContext, type AuthState } from '../../src/react-app/auth/auth-context';
+
+const auth: AuthState = {
+  account: { id: 'test-account', name: 'Test account' },
+  loading: false, configured: true, error: '',
+  signIn: async () => {}, signOut: async () => {},
+  request: (url, init) => fetch(url, init),
+};
+
+vi.mock('../../src/react-app/auth/AuthProvider', () => ({
+  AuthProvider: ({ children }: { children: ReactNode }) => <AuthContext.Provider value={auth}>{children}</AuthContext.Provider>,
+}));
 
 function renderShell() {
   render(<MemoryRouter><AppShell /></MemoryRouter>);
@@ -20,18 +33,18 @@ describe('sidebar toggle', () => {
     expect(sidebar).not.toBeNull();
     expect(toggle.getAttribute('aria-expanded')).toBe('false');
     expect(sidebar?.hasAttribute('inert')).toBe(false);
-    expect(screen.getByRole('link', { name: 'Dashboard' })).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'Dashboard' }).getAttribute('title')).toBe('Dashboard');
+    expect(screen.getByRole('link', { name: 'Chat' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Chat' }).getAttribute('title')).toBe('Chat');
 
     await user.click(toggle);
     expect(toggle.getAttribute('aria-expanded')).toBe('true');
     expect(sidebar?.hasAttribute('inert')).toBe(false);
-    expect(screen.getByRole('link', { name: 'Dashboard' }).hasAttribute('title')).toBe(false);
+    expect(screen.getByRole('link', { name: 'Chat' }).hasAttribute('title')).toBe(false);
 
     await user.click(toggle);
     expect(toggle.getAttribute('aria-expanded')).toBe('false');
     expect(sidebar?.hasAttribute('inert')).toBe(false);
-    expect(screen.getByRole('link', { name: 'Dashboard' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Chat' })).toBeTruthy();
   });
 
   it('closes through the close button and navigation links', async () => {
@@ -44,7 +57,7 @@ describe('sidebar toggle', () => {
     expect(toggle.getAttribute('aria-expanded')).toBe('false');
     expect(document.activeElement).toBe(toggle);
 
-    await user.click(screen.getByRole('link', { name: 'Dashboard' }));
+    await user.click(screen.getByRole('link', { name: 'Chat' }));
     expect(toggle.getAttribute('aria-expanded')).toBe('false');
     expect(screen.queryByRole('button', { name: 'Close sidebar' })).toBeNull();
   });
@@ -53,7 +66,7 @@ describe('sidebar toggle', () => {
     render(<MemoryRouter><Sidebar isMobile onToggle={vi.fn()} /></MemoryRouter>);
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(screen.queryByRole('complementary')).toBeNull();
-    expect(screen.queryByRole('link', { name: 'Dashboard' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Chat' })).toBeNull();
   });
 
   it('dismisses the mobile drawer with Escape and restores focus', async () => {
@@ -71,12 +84,12 @@ describe('sidebar toggle', () => {
     const toggle = screen.getByRole('button', { name: 'Open Drawer' });
     expect(toggle.getAttribute('aria-expanded')).toBe('false');
     expect(screen.queryByRole('complementary')).toBeNull();
-    expect(screen.queryByRole('link', { name: 'Dashboard' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Chat' })).toBeNull();
 
     await user.click(toggle);
     await user.click(screen.getByRole('button', { name: 'Hide sidebar' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
-    expect(screen.queryByRole('link', { name: 'Dashboard' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Chat' })).toBeNull();
     await waitFor(() => expect(document.activeElement).toBe(toggle));
 
     await user.click(toggle);
@@ -92,7 +105,7 @@ describe('sidebar toggle', () => {
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
 
     await user.click(toggle);
-    await user.click(screen.getByRole('link', { name: 'Dashboard' }));
+    await user.click(screen.getByRole('link', { name: 'Chat' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
   });
 
@@ -115,7 +128,7 @@ describe('sidebar toggle', () => {
       else listener.handleEvent(event);
     });
     const user = renderShell();
-    expect(screen.getByRole('link', { name: 'Dashboard' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Chat' })).toBeTruthy();
     await user.click(screen.getByRole('button', { name: 'Show sidebar' }));
     act(() => {
       mobile = true;
@@ -129,14 +142,14 @@ describe('sidebar toggle', () => {
     });
     expect(screen.getByRole('button', { name: 'Hide sidebar' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Open Drawer' })).toBeNull();
-    expect(screen.getByRole('link', { name: 'Dashboard' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Chat' })).toBeTruthy();
   });
 });
 
 describe('workspace routes', () => {
   it('renders chat inside the shell on both Home and Agent without duplicate drawers', async () => {
     vi.stubGlobal('fetch', vi.fn(async (url: string, init: RequestInit) => url === '/api/files'
-      ? Response.json({ files: [] })
+      ? Response.json({ files: [] }) : url === '/api/conversations' ? Response.json({ conversations: [], cursor: null })
       : Response.json({
       session_id: new Headers(init.headers).get('x-session-id'),
       messages: [],
@@ -147,7 +160,7 @@ describe('workspace routes', () => {
     expect(await screen.findByText('What should we work on?')).toBeTruthy();
     expect(await screen.findByRole('grid', { name: 'Files' })).toBeTruthy();
     expect(screen.getByRole('main').contains(screen.getByRole('textbox', { name: 'Message' }))).toBe(true);
-    await user.click(screen.getByRole('link', { name: 'Agent' }));
+    await user.click(screen.getByRole('link', { name: 'Chat' }));
     expect(await screen.findByRole('button', { name: 'PAULIBABY' })).toBeTruthy();
     expect(await screen.findByText('What should we work on?')).toBeTruthy();
     expect(screen.getAllByRole('navigation', { name: 'Admin navigation' })).toHaveLength(1);

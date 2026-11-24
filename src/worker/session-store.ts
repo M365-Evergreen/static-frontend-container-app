@@ -1,3 +1,5 @@
+import type { HistorySnapshot } from "./chat-history.ts";
+
 export interface Message {
   sequence: number;
   role: "user" | "assistant";
@@ -57,17 +59,74 @@ export class SessionStore {
         content TEXT NOT NULL,
         request_id TEXT NOT NULL
       );
+      CREATE TABLE IF NOT EXISTS chat_owner (
+        singleton INTEGER PRIMARY KEY CHECK (singleton = 1),
+        owner_id TEXT NOT NULL
+      );
+      CREATE TABLE IF NOT EXISTS chat_projection (
+        singleton INTEGER PRIMARY KEY CHECK (singleton = 1),
+        revision INTEGER NOT NULL,
+        synced_revision INTEGER NOT NULL,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL
+      );
     `);
   }
 
-  identify(sessionId: string) {
-    const [row] = this.database.sql.exec("SELECT session_id FROM chat_session");
-    if (row && row.session_id !== sessionId) {
-      throw new SessionError("session_mismatch", "Session does not match this object.", 403);
-    }
-    if (!row) {
-      this.database.sql.exec("INSERT INTO chat_session VALUES (1, ?)", sessionId);
-    }
+  identify(sessionId: string, ownerId: string) {
+    this.database.transactionSync(() => {
+      const [row] = this.database.sql.exec("SELECT session_id FROM chat_session");
+      if (row && row.session_id !== sessionId) {
+        throw new SessionError("session_mismatch", "Session does not match this object.", 403);
+      }
+      const [owner] = this.database.sql.exec("SELECT owner_id FROM chat_owner");
+      if (owner && owner.owner_id !== ownerId) {
+        throw new SessionError("access_denied", "This conversation belongs to another account.", 403);
+      }
+      if (!owner) {
+        const [legacy] = this.database.sql.exec(
+          "SELECT 1 FROM chat_messages UNION ALL SELECT 1 FROM chat_requests LIMIT 1",
+        );
+        if (legacy) {
+          throw new SessionError("legacy_session", "Anonymous history cannot be claimed by an account. Start a new conversation.", 403);
+        }
+        this.database.sql.exec("INSERT INTO chat_owner VALUES (1, ?)", ownerId);
+      }
+      if (!row) this.database.sql.exec("INSERT INTO chat_session VALUES (1, ?)", sessionId);
+      const now = Date.now();
+      this.database.sql.exec("INSERT OR IGNORE INTO chat_projection VALUES (1, 0, 0, ?, ?)", now, now);
+    });
+  }
+
+  pendingProjection(): HistorySnapshot | undefined {
+    const [row] = this.database.sql.exec(`
+      SELECT session_id, owner_id, revision, created_at, updated_at
+      FROM chat_session, chat_owner, chat_projection WHERE revision > synced_revision
+    `);
+    if (!row) return undefined;
+    if (
+      typeof row.session_id !== "string" || typeof row.owner_id !== "string" ||
+      typeof row.revision !== "number" || typeof row.created_at !== "number" ||
+      typeof row.updated_at !== "number"
+    ) throw new SessionError("invalid_storage", "Stored conversation metadata is invalid.", 500);
+    return {
+      session_id: row.session_id, owner_id: row.owner_id, revision: row.revision,
+      created_at: row.created_at, updated_at: row.updated_at, messages: this.history(),
+    };
+  }
+
+  acknowledgeProjection(revision: number) {
+    this.database.sql.exec(
+      "UPDATE chat_projection SET synced_revision = MAX(synced_revision, ?) WHERE revision >= ?",
+      revision, revision,
+    );
+  }
+
+  private queueProjection(now: number) {
+    this.database.sql.exec(
+      "UPDATE chat_projection SET revision = revision + 1, updated_at = MAX(updated_at + 1, ?)",
+      now,
+    );
   }
 
   history(): Message[] {
@@ -175,6 +234,7 @@ export class SessionStore {
         requestId,
         token,
       );
+      this.queueProjection(now);
     });
   }
 
@@ -193,6 +253,7 @@ export class SessionStore {
       }
       // Leave the Container's lifecycle storage and schedules intact.
       this.database.sql.exec("DELETE FROM chat_messages; DELETE FROM chat_requests;");
+      this.queueProjection(now);
     });
   }
 }

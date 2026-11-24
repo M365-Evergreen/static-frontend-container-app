@@ -1,3 +1,4 @@
+import { useContext } from 'react';
 import { AgentComposer } from '../AgentComposer/AgentComposer';
 import { AgentEmptyState } from '../AgentEmptyState/AgentEmptyState';
 import { AgentHeader } from '../AgentHeader/AgentHeader';
@@ -6,10 +7,15 @@ import { Button } from '../Button/Button';
 import { ChatMessage } from '../ChatMessage/ChatMessage';
 import { MessageScroller } from '../MessageScroller/MessageScroller';
 import { useAgentChat } from '../../hooks/useAgentChat';
+import { useAuth } from '../../auth/auth-context';
+import { AuthControls } from '../../auth/AuthControls';
+import { ChatHistoryContext } from '../../chat/history-context';
 import styles from './Agent.module.css';
 
-function Agent() {
-  const chat = useAgentChat();
+function AgentConversation({ sessionId, ownerId }: { sessionId?: string; ownerId: string }) {
+  const { request } = useAuth();
+  const history = useContext(ChatHistoryContext);
+  const chat = useAgentChat({ sessionId, ownerId, request, onHistoryChanged: history?.refresh });
   const isEmpty = !chat.loadingHistory && !chat.historyError && chat.messages.length === 0 && !chat.draft;
   const anchorId = chat.draft?.requestId ?? chat.traces[chat.traces.length - 1]?.requestId ?? null;
   const status = chat.loadingHistory ? 'Restoring conversation...'
@@ -80,6 +86,18 @@ function Agent() {
       </div>
     </section>
   );
+}
+
+function Agent({ sessionId }: { sessionId?: string }) {
+  const auth = useAuth();
+  if (!auth.account || auth.loading) {
+    return <section className={styles.shell} aria-label="Chat sign-in">
+      <h2>Sign in to chat</h2>
+      <p>Your conversations are private to your Microsoft account.</p>
+      <AuthControls />
+    </section>;
+  }
+  return <AgentConversation key={`${auth.account.id}:${sessionId ?? 'current'}`} sessionId={sessionId} ownerId={auth.account.id} />;
 }
 
 export default Agent;

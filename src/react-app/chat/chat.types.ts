@@ -12,6 +12,19 @@ export interface HistoryResponse {
   messages: StoredMessage[];
 }
 
+export interface ConversationSummary {
+  session_id: string;
+  title: string;
+  created_at: number;
+  updated_at: number;
+  message_count: number;
+}
+
+export interface ConversationPage {
+  conversations: ConversationSummary[];
+  cursor: string | null;
+}
+
 export type RunStatus = 'starting' | 'running' | 'cancelling' | 'cancelled' | 'failed';
 
 export interface Draft {
