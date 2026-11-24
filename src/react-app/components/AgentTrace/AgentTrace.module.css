@@ -1,0 +1,70 @@
+.trace {
+  border-inline-start: 2px solid var(--color-border);
+  padding-inline-start: var(--space-sm);
+}
+
+.heading {
+  margin: 0;
+  font-size: inherit;
+}
+
+.row {
+  display: flex;
+  width: 100%;
+  min-height: 44px;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm);
+  border: 0;
+  background: transparent;
+  color: var(--color-text-primary);
+  font: inherit;
+  text-align: start;
+}
+
+button.row {
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+}
+
+.row[data-hovered] {
+  background: var(--color-bg-surface);
+}
+
+.row svg {
+  flex-shrink: 0;
+}
+
+.status {
+  margin-inline-start: auto;
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+}
+
+.panel {
+  padding: var(--space-sm) var(--space-md) var(--space-md);
+  font-size: 0.875rem;
+}
+
+.disclosure[data-expanded] .chevron {
+  transform: rotate(90deg);
+}
+
+.note {
+  margin: 0;
+  padding: var(--space-sm);
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner { animation: none; }
+}

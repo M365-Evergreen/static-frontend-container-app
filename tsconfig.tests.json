@@ -4,5 +4,6 @@
     "rootDir": ".",
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.tests.tsbuildinfo"
   },
-  "include": ["tests/worker", "tests/frontend", "src/react-app/sse.ts"]
+  "include": ["tests/worker", "tests/frontend", "src/react-app/sse.ts"],
+  "exclude": ["tests/frontend/*.spec.tsx", "tests/frontend/setup.ts", "tests/frontend/vitest.config.ts"]
 }

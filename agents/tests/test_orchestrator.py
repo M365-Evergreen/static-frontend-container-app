@@ -7,7 +7,6 @@ import pytest
 from agents.main import app
 from agents.models import PipelineSettings, RunRequest
 from agents.orchestrator import AgentPipeline
-from agents.tests.conftest import provider_response
 from agents.tests.test_sessions import payload
 
 
@@ -52,12 +51,18 @@ async def test_sequential_agents_receive_authoritative_history_and_previous_outp
                     result[preceding]["output"]
                     in provider.requests[index]["input"][len(base) + preceding]["content"]
                 )
-        assert all(request["model"] == "gpt-4.1-mini" for request in provider.requests)
+        assert all(request["model"] == provider.model for request in provider.requests)
         assert all(request["max_output_tokens"] == 1024 for request in provider.requests)
-        assert all(
-            request["store"] is False and request["tools"] == [] for request in provider.requests
-        )
-    assert provider.clients[0].is_closed()
+        assert all(request.get("tools", []) == [] for request in provider.wire_requests)
+        if provider.kind == "gemini":
+            assert all(request["store"] is False for request in provider.wire_requests)
+            assert all("cachedContent" not in request for request in provider.wire_requests)
+        else:
+            assert all(request["stream"] is False for request in provider.wire_requests)
+            assert all(
+                request["messages"][0]["role"] == "system" for request in provider.wire_requests
+            )
+    assert provider.clients[0].http_client.is_closed
 
 
 @pytest.mark.asyncio
@@ -145,7 +150,7 @@ async def test_second_agent_failure_cannot_become_a_partial_success(provider):
     async def fail_second(request, count):
         if count == 2:
             return httpx.Response(500, json={"error": {"message": "Provider failed"}})
-        return httpx.Response(200, json=provider_response("A genuine first-stage result"))
+        return httpx.Response(200, json=provider.response("A genuine first-stage result"))
 
     provider.handler = fail_second
     async with (
@@ -174,15 +179,21 @@ async def test_second_agent_failure_cannot_become_a_partial_success(provider):
 )
 async def test_incomplete_or_unusable_provider_output_is_not_success(provider, kind, code):
     async def output(request, count):
-        data = provider_response("Partial text")
+        data = provider.response("Partial text")
         if kind == "incomplete":
-            data.update(status="incomplete", incomplete_details={"reason": "max_output_tokens"})
+            if provider.kind == "gemini":
+                data["candidates"][0]["finishReason"] = "MAX_TOKENS"
+            else:
+                data["choices"][0]["finish_reason"] = "length"
         elif kind == "oversized":
-            data = provider_response("x" * 8001)
+            data = provider.response("x" * 8001)
         elif kind == "empty":
-            data["output"] = []
+            data["candidates" if provider.kind == "gemini" else "choices"] = []
         else:
-            data["output"][0]["content"] = [{"type": "refusal", "refusal": "Cannot answer"}]
+            if provider.kind == "gemini":
+                data["candidates"][0]["finishReason"] = "SAFETY"
+            else:
+                data["choices"][0]["message"]["refusal"] = "Cannot answer"
         return httpx.Response(200, json=data)
 
     provider.handler = output
@@ -215,7 +226,14 @@ async def test_pipeline_deadline_cancels_a_stalled_provider(provider):
 
     provider.handler = stalled
     async with provider.client() as client:
-        pipeline = AgentPipeline(client, PipelineSettings(run_timeout_seconds=0.02))
+        pipeline = AgentPipeline(
+            client,
+            PipelineSettings(
+                provider=provider.kind,
+                model=provider.model,
+                run_timeout_seconds=0.02,
+            ),
+        )
         result = [
             event async for event in pipeline.events(RunRequest.model_validate(payload()), uuid4())
         ]
@@ -236,7 +254,9 @@ async def test_disconnect_cancellation_stops_the_provider_without_success(provid
 
     provider.handler = stalled
     async with provider.client() as client:
-        pipeline = AgentPipeline(client, PipelineSettings())
+        pipeline = AgentPipeline(
+            client, PipelineSettings(provider=provider.kind, model=provider.model)
+        )
         stream = pipeline.events(RunRequest.model_validate(payload()), uuid4())
         task = asyncio.create_task(anext(stream))
         await started.wait()
@@ -252,12 +272,14 @@ async def test_disconnect_cancellation_stops_the_provider_without_success(provid
     [
         ("key", "missing_configuration"),
         ("model", "invalid_configuration"),
+        ("provider", "invalid_configuration"),
     ],
 )
 async def test_missing_or_invalid_configuration_is_explicit_but_health_still_responds(
     provider, monkeypatch, setting, code
 ):
-    monkeypatch.setenv("OPENAI_API_KEY" if setting == "key" else "OPENAI_MODEL", "")
+    variable = {"key": "LLM_API_KEY", "model": "LLM_MODEL", "provider": "LLM_PROVIDER"}[setting]
+    monkeypatch.setenv(variable, "")
     async with (
         app.router.lifespan_context(app),
         httpx.AsyncClient(

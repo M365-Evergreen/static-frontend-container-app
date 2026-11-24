@@ -9,8 +9,8 @@ BASE_URL = os.environ.get("SESSION_API_BASE_URL")
 pytestmark = [
     pytest.mark.asyncio,
     pytest.mark.skipif(
-        not BASE_URL or os.environ.get("RUN_LIVE_OPENAI") != "true",
-        reason="Six paid model calls require SESSION_API_BASE_URL and RUN_LIVE_OPENAI=true",
+        not BASE_URL or os.environ.get("RUN_LIVE_MODELS") != "true",
+        reason="Six paid model calls require SESSION_API_BASE_URL and RUN_LIVE_MODELS=true",
     ),
 ]
 
@@ -40,7 +40,13 @@ async def test_real_agents_and_followup_use_durable_history():
                 "synthesizer_agent",
             ]
             assert initial[-1]["status"] == "done"
-            assert initial[1]["output"].startswith("Model-only analysis")
+            assert initial[1]["output"].startswith(
+                (
+                    "Model-only analysis",
+                    "Knowledge-assisted analysis",
+                    "No matching knowledge sources; model-only analysis",
+                )
+            )
             assert len((await client.get("/api/history", headers=headers)).json()["messages"]) == 2
             following = await client.post(
                 "/api/chat",

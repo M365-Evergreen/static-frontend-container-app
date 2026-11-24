@@ -63,6 +63,7 @@ Worker-to-container streaming through the local Vite server remains unverified
 in a supported shell. Standalone Docker health/SSE and production packaging
 were verified.
 
-Builds warn that no local `OPENAI_API_KEY` is configured. The simulated pipeline
-does not use it yet; configure the secret before real OpenAI integration or
-deployment. No secret values were added.
+These verification notes describe the original simulated scaffold. The current
+backend requires explicit provider/model selection and the selected provider's
+`LLM_API_KEY`; see the [current setup](../README.md#model-providers-and-execution-limits).
+There is no default provider or model. No secret values were added.

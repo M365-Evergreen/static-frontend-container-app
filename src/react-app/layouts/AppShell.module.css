@@ -1,0 +1,39 @@
+.shell {
+  display: flex;
+  min-height: 100dvh;
+}
+
+.workspace {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+  padding: 5rem clamp(1rem, 4vw, 4rem) 1.5rem;
+}
+
+.skipLink {
+  position: fixed;
+  top: -100px;
+  left: var(--space-md);
+  z-index: 100;
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-sm);
+  background: var(--color-accent);
+  color: var(--color-accent-text);
+  text-decoration: none;
+}
+
+.skipLink:focus {
+  top: var(--space-md);
+}
+
+@media (max-width: 47.999rem) {
+  .main {
+    padding: 0 1rem 1rem;
+  }
+}

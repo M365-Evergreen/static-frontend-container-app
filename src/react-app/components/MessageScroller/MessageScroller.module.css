@@ -1,0 +1,32 @@
+.scroller {
+  position: relative;
+  min-height: 0;
+  flex: 1;
+}
+
+.viewport {
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overflow-anchor: none;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.content {
+  display: flow-root;
+  min-height: 100%;
+  padding: var(--space-xs) var(--space-md) var(--space-lg);
+}
+
+.latest {
+  position: absolute;
+  right: var(--space-md);
+  bottom: var(--space-md);
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 12%);
+}
+
+@media (max-width: 30rem) {
+  .content { padding-inline: var(--space-xs); }
+}

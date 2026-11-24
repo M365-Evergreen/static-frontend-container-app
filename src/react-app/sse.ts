@@ -1,3 +1,5 @@
+import { readApiError } from './chat/chat.api.ts';
+
 export type AgentName = "planner_agent" | "research_agent" | "synthesizer_agent";
 
 export interface RunningEvent {
@@ -22,26 +24,14 @@ export interface ErrorEvent {
 
 export type SseEvent = RunningEvent | CompletionEvent | ErrorEvent;
 
-async function readApiError(response: Response): Promise<string> {
-  try {
-    const payload = (await response.json()) as {
-      error?: { message?: string };
-    };
-    return payload.error?.message ?? `Request failed (${response.status}).`;
-  } catch {
-    return `Request failed (${response.status}).`;
-  }
-}
-
 export function isSseEvent(value: unknown): value is SseEvent {
   if (!value || typeof value !== "object") return false;
   const event = value as Record<string, unknown>;
   if (event.status === "running") {
     return (
-      typeof event.turn === "number" &&
-      (event.agent === "planner_agent" ||
-        event.agent === "research_agent" ||
-        event.agent === "synthesizer_agent") &&
+      Number.isInteger(event.turn) &&
+      typeof event.turn === "number" && event.turn >= 1 && event.turn <= 3 &&
+      event.agent === ["planner_agent", "research_agent", "synthesizer_agent"][event.turn - 1] &&
       typeof event.output === "string"
     );
   }
@@ -49,7 +39,8 @@ export function isSseEvent(value: unknown): value is SseEvent {
     return (
       typeof event.request_id === "string" &&
       typeof event.final_output === "string" &&
-      typeof event.history_length === "number"
+      typeof event.history_length === "number" && Number.isSafeInteger(event.history_length) &&
+      event.history_length >= 2
     );
   }
   return (
@@ -64,6 +55,7 @@ export async function readSse(
   signal: AbortSignal,
   onEvent: (event: SseEvent) => void,
 ): Promise<void> {
+  signal.throwIfAborted();
   if (!response.ok) throw new Error(await readApiError(response));
   if (!response.body) throw new Error("The conversation stream ended unexpectedly.");
   if (!response.headers.get("content-type")?.startsWith("text/event-stream")) {
@@ -74,6 +66,13 @@ export async function readSse(
   const decoder = new TextDecoder();
   let buffer = "";
   let completed = false;
+  let streamEnded = false;
+  let cancellation: Promise<void> | undefined;
+  const abort = () => {
+    // An aborted stream may already be errored; the caller receives the abort reason.
+    cancellation = reader.cancel(signal.reason).catch(() => {});
+  };
+  signal.addEventListener('abort', abort, { once: true });
 
   const processFrame = (frame: string) => {
     let eventData = "";
@@ -95,13 +94,19 @@ export async function readSse(
   };
 
   try {
+    signal.throwIfAborted();
     while (true) {
       const { done, value } = await reader.read();
-      if (done) break;
+      signal.throwIfAborted();
+      if (done) {
+        streamEnded = true;
+        break;
+      }
       buffer += decoder.decode(value, { stream: true });
       let boundary = /\r?\n\r?\n/.exec(buffer);
       while (boundary) {
         processFrame(buffer.slice(0, boundary.index));
+        if (completed) return;
         buffer = buffer.slice(boundary.index + boundary[0].length);
         boundary = /\r?\n\r?\n/.exec(buffer);
       }
@@ -109,9 +114,18 @@ export async function readSse(
     buffer += decoder.decode();
     if (buffer.trim()) processFrame(buffer);
   } finally {
-    reader.releaseLock();
+    signal.removeEventListener('abort', abort);
+    try {
+      if (cancellation) {
+        await cancellation;
+      } else if (!streamEnded) {
+        await reader.cancel();
+      }
+    } finally {
+      reader.releaseLock();
+    }
   }
 
   if (!completed) throw new Error("The conversation stream ended before completion.");
-  void signal;
 }
+

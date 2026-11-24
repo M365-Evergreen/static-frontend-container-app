@@ -336,3 +336,20 @@ test("known startup/provider errors are surfaced without forwarding backend secr
   assert.equal(JSON.stringify(result).includes(secret), false);
   assert.deepEqual(streaming.store.history(), []);
 });
+
+for (const code of ["knowledge_error", "knowledge_timeout", "knowledge_limit"]) {
+  test(`${code} is sanitized, never committed, and permits retry`, async () => {
+    let fail = true;
+    const h = harness(async (req) => {
+      if (fail) return upstream([progress(), { status: "error", code, message: "private-source-error" }]);
+      const body = await req.json() as RunInput;
+      return upstream([...pipelineProgress(), completion(body)]);
+    });
+    const result = await events(await h.coordinator.fetch(request()));
+    assert.equal(result.at(-1)?.code, code);
+    assert.equal(JSON.stringify(result).includes("private-source-error"), false);
+    assert.deepEqual(h.store.history(), []);
+    fail = false;
+    assert.equal((await events(await h.coordinator.fetch(request()))).at(-1)?.status, "done");
+  });
+}

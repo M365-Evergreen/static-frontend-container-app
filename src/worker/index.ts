@@ -1,23 +1,19 @@
 import { Container, getContainer } from "@cloudflare/containers";
-<<<<<<< HEAD
-=======
 import { SessionStore } from "./session-store.ts";
 import { SessionCoordinator, errorResponse, uuidHeader } from "./session.ts";
 import { SessionError } from "./session-store.ts";
 import { prepareContainer } from "./container-ready.ts";
->>>>>>> e84d3c3 (feat: implement session management with SQLite storage)
+import { listFiles } from "./files.ts";
 
 export class AgentContainer extends Container<Env> {
   defaultPort = 8080;
   sleepAfter = "10m";
 
   envVars = {
-    OPENAI_API_KEY: this.env.OPENAI_API_KEY ?? "",
-<<<<<<< HEAD
-  };
-
-=======
-    OPENAI_MODEL: this.env.OPENAI_MODEL,
+    LLM_API_KEY: this.env.LLM_API_KEY ?? "",
+    LLM_PROVIDER: this.env.LLM_PROVIDER,
+    LLM_MODEL: this.env.LLM_MODEL,
+    KNOWLEDGE_MCP_URL: this.env.KNOWLEDGE_MCP_URL,
   };
 
   private readonly session: SessionCoordinator;
@@ -55,7 +51,6 @@ export class AgentContainer extends Container<Env> {
     return container.getTcpPort(this.defaultPort).fetch(request);
   }
 
->>>>>>> e84d3c3 (feat: implement session management with SQLite storage)
   override onStart() {
     console.log("Stateful AgentContainer started");
   }
@@ -69,17 +64,11 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
 
-    if (url.pathname.startsWith("/api/")) {
-<<<<<<< HEAD
-      const sessionId =
-        request.headers.get("x-session-id") ||
-        url.searchParams.get("sessionId") ||
-        "default-session";
+    if (url.pathname === "/api/files") {
+      return listFiles(request, env.R2);
+    }
 
-      // Routes all requests for this sessionId to the exact same stateful container
-      const container = getContainer(env.AGENT_CONTAINER, sessionId);
-      return container.fetch(request);
-=======
+    if (url.pathname.startsWith("/api/")) {
       try {
         if (url.searchParams.has("sessionId")) {
           throw new SessionError("invalid_id", "Use the x-session-id header, not a query parameter.", 400);
@@ -92,7 +81,6 @@ export default {
         if (error instanceof SessionError) return errorResponse(error);
         throw error;
       }
->>>>>>> e84d3c3 (feat: implement session management with SQLite storage)
     }
 
     return env.ASSETS.fetch(request);

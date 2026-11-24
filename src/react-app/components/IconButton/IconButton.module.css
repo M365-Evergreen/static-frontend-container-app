@@ -1,0 +1,37 @@
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+
+.button[data-hovered] {
+  background: var(--color-bg-surface);
+}
+
+.button[data-disabled] {
+  color: var(--color-text-secondary);
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.button[data-focus-visible] {
+  outline: 3px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+.tooltip {
+  max-width: 18rem;
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-sm);
+  background: var(--color-text-primary);
+  color: var(--color-bg-primary);
+  font-size: 0.875rem;
+}
