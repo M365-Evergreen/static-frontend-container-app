@@ -1,4 +1,5 @@
 import { format } from "prettier/standalone";
+import type { Options } from "prettier";
 import * as babel from "prettier/plugins/babel";
 import * as estree from "prettier/plugins/estree";
 import * as html from "prettier/plugins/html";
@@ -31,6 +32,7 @@ export function formatCode(
   tabWidth: number,
   singleQuote: boolean,
   semi: boolean,
+  options?: Pick<Options, "parser" | "filepath">,
 ): Promise<string> {
   const parsers: Record<Language, string> = {
     javascript: "babel",
@@ -46,5 +48,6 @@ export function formatCode(
     tabWidth,
     singleQuote,
     semi,
+    ...options,
   });
 }

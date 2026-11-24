@@ -2,19 +2,14 @@ import { useId } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { Dialog } from 'react-aria-components/Dialog';
 import { Modal, ModalOverlay } from 'react-aria-components/Modal';
-import { Palette, FileText, Image, LayoutDashboard, LayoutTemplate, Settings, Users, PanelLeftClose, PanelLeftOpen, Layers2 } from 'lucide-react';
+import { FileText, Settings,  PanelLeftClose, PanelLeftOpen,  BotMessageSquareIcon } from 'lucide-react';
 import { IconButton } from '../IconButton/IconButton';
 import styles from './Sidebar.module.css';
 
 const buttons = [
-  { to: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard, end: true },
-  { to: "/admin/dashboard/posts", label: "Posts", icon: FileText },
-  { to: "/admin/dashboard/pages", label: "Pages", icon: Layers2 },
-  { to: "/admin/dashboard/video-playlists", label: "Video playlists", icon: Layers2 },
-  { to: "/admin/dashboard/templates", label: "Templates", icon: LayoutTemplate },
-  { to: "/admin/media-library", label: "Media", icon: Image },
-  { to: "/admin/dashboard/users", label: "Users", icon: Users },
-  { to: "/admin/dashboard/themes", label: "Themes", icon: Palette },
+  { to: "/agent", label: "Chat", icon: BotMessageSquareIcon, end: true },
+  { to: "/documents", label: "Files", icon: FileText },
+
   { to: "/admin/dashboard/settings", label: "Settings", icon: Settings, end: true },
 ];
 
