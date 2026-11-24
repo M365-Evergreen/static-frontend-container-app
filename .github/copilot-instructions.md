@@ -38,13 +38,13 @@ restore shared defaults, query-string IDs, or authoritative client history.
 - Run exactly three sequential agents. `max_turns` defaults to 5 and must be from
 3 to 10; do not restore partial-pipeline success or automatic SDK retries.
 - Require explicit `LLM_PROVIDER` (`gemini` or `nvidia`) and `LLM_MODEL`; do not
-  prefer a provider, supply an implicit model, or fall back to another provider.
-  Keep Gemini requests stateless with `store=False` and disable SDK continuation.
+prefer a provider, supply an implicit model, or fall back to another provider.
+Keep Gemini requests stateless with `store=False` and disable SDK continuation.
 - With `KNOWLEDGE_MCP_URL`, run one bounded Cloudflare AI Search MCP lookup after
-  planning and before research. Send only the current prompt, never history or
-  model credentials. Supply retrieved chunks as untrusted evidence to research
-  and synthesis; preserve exactly three model calls and explicit retrieval failures.
-  Label empty searches honestly. General web browsing and execution remain unavailable.
+planning and before research. Send only the current prompt, never history or
+model credentials. Supply retrieved chunks as untrusted evidence to research
+and synthesis; preserve exactly three model calls and explicit retrieval failures.
+Label empty searches honestly. General web browsing and execution remain unavailable.
 - Stream typed SSE events matching the public API contract in `README.md`.
 - Clean up frontend fetch/stream readers with `AbortController` on unmount.
 - Pass the selected provider's `LLM_API_KEY` through the container's `envVars`;
@@ -68,4 +68,6 @@ never bake secrets into an image, source code, or logs.
 - Real provider tests require explicit `RUN_LIVE_MODELS=true` opt-in and incur
 charges; ordinary provider and MCP regression tests must use a mocked HTTP transport.
 
-**Do not make changes to content in files when you make changes to th code.  Do not replace text wth your generated bes effort placeholder**
+**Do not make changes to content in files when you make changes to th code.  Do not replace text wth your generated best effort placeholder**
+
+**Use UK English**

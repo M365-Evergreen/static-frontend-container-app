@@ -3,7 +3,7 @@ import { SessionStore } from "./session-store.ts";
 import { SessionCoordinator, errorResponse, uuidHeader } from "./session.ts";
 import { SessionError } from "./session-store.ts";
 import { prepareContainer } from "./container-ready.ts";
-import { listFiles } from "./files.ts";
+import { downloadFile, listFiles } from "./files.ts";
 
 export class AgentContainer extends Container<Env> {
   defaultPort = 8080;
@@ -66,6 +66,9 @@ export default {
 
     if (url.pathname === "/api/files") {
       return listFiles(request, env.R2);
+    }
+    if (url.pathname === "/api/files/download") {
+      return downloadFile(request, env.R2);
     }
 
     if (url.pathname.startsWith("/api/")) {
