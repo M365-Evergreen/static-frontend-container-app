@@ -10,7 +10,11 @@
   "vars": {
     "LLM_PROVIDER": "gemini",
     "LLM_MODEL": "gemini-3.8-flash",
-    "KNOWLEDGE_MCP_URL": "https://9904ca51-56e6-48cd-ae7e-3e0f154d2724.search.ai.cloudflare.com/mcp"
+    "KNOWLEDGE_MCP_URL": "https://9904ca51-56e6-48cd-ae7e-3e0f154d2724.search.ai.cloudflare.com/mcp",
+    "ENTRA_TENANT_ID": "7a5bf294-6ae8-47c4-b0c4-b2f9166d7a3f",
+    "ENTRA_CLIENT_ID": "7ea67f3b-a85c-4427-855a-578c168edc27",
+    "ENTRA_API_AUDIENCE": "7ea67f3b-a85c-4427-855a-578c168edc27",
+    "ENTRA_API_SCOPE": "api://7ea67f3b-a85c-4427-855a-578c168edc27/Chat.Access"
   },
   "secrets": {
     "required": [
@@ -46,7 +50,8 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_id": "e33c33ce-55ad-49b4-8d89-02e1718d1d03"
+      "database_id": "e33c33ce-55ad-49b4-8d89-02e1718d1d03",
+      "migrations_dir": "migrations"
     }
   ],
   "r2_buckets": [

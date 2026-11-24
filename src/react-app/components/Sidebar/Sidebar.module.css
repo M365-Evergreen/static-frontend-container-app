@@ -78,6 +78,7 @@
 
 .navigation {
   display: flex;
+  flex-shrink: 0;
   flex-direction: column;
   gap: 0.25rem;
   min-height: 0;
@@ -108,6 +109,118 @@
 
 .navActive {
   font-weight: 600;
+}
+
+.history {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+}
+
+.history p {
+  margin: 0 0 0.5rem;
+  overflow-wrap: anywhere;
+}
+
+.historyHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.historyHeading h2 {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.historyButton,
+.refresh {
+  display: flex;
+  min-height: 44px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+  color: var(--color-text-primary);
+  background: var(--color-bg-surface);
+  cursor: pointer;
+  font: inherit;
+}
+
+.refresh {
+  width: 44px;
+  background: transparent;
+  border: 0;
+}
+
+.historyButton[data-disabled],
+.refresh[data-disabled] {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.historyButton[data-focus-visible],
+.refresh[data-focus-visible],
+.conversation:focus-visible {
+  outline: 2px solid var(--color-text-primary);
+  outline-offset: 2px;
+}
+
+.historyList {
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.conversation {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  padding: 0.75rem 0.5rem;
+  border-radius: 0.75rem;
+  color: var(--color-text-primary);
+  text-decoration: none;
+}
+
+.conversation:hover {
+  background: var(--color-bg-surface);
+}
+
+.conversation svg {
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+}
+
+.conversation > span {
+  min-width: 0;
+}
+
+.conversationTitle {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.conversation time {
+  display: block;
+  margin-top: 0.25rem;
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+}
+
+.historyAccount {
+  margin-top: auto;
 }
 
 .backdrop {

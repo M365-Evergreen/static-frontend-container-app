@@ -1,6 +1,8 @@
 import { Container, getContainer } from "@cloudflare/containers";
 import { SessionStore } from "./session-store.ts";
-import { SessionCoordinator, errorResponse, uuidHeader } from "./session.ts";
+import { SessionCoordinator } from "./session.ts";
+import { D1ChatHistory } from "./chat-history.ts";
+import { handleChatRequest } from "./chat-router.ts";
 import { SessionError } from "./session-store.ts";
 import { prepareContainer } from "./container-ready.ts";
 import { downloadFile, listFiles, writeFile } from "./files.ts";
@@ -33,6 +35,8 @@ export class AgentContainer extends Container<Env> {
       new SessionStore(ctx.storage),
       (request) => this.runInContainer(request),
       (task) => ctx.waitUntil(task),
+      120000,
+      new D1ChatHistory(env.DB),
     );
   }
 
@@ -104,18 +108,8 @@ export default {
     }
 
     if (url.pathname.startsWith("/api/")) {
-      try {
-        if (url.searchParams.has("sessionId")) {
-          throw new SessionError("invalid_id", "Use the x-session-id header, not a query parameter.", 400);
-        }
-        const sessionId = uuidHeader(request, "x-session-id");
-        const headers = new Headers(request.headers);
-        headers.set("x-session-id", sessionId);
-        return getContainer(env.AGENT_CONTAINER, sessionId).fetch(new Request(request, { headers }));
-      } catch (error) {
-        if (error instanceof SessionError) return errorResponse(error);
-        throw error;
-      }
+      return handleChatRequest(request, env, (sessionId, forwarded) =>
+        getContainer(env.AGENT_CONTAINER, sessionId).fetch(forwarded));
     }
 
     return env.ASSETS.fetch(request);

@@ -2,13 +2,15 @@ import { useId } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { Dialog } from 'react-aria-components/Dialog';
 import { Modal, ModalOverlay } from 'react-aria-components/Modal';
-import { FileText, Settings,  PanelLeftClose, PanelLeftOpen,  BotMessageSquareIcon } from 'lucide-react';
+import { FileText, Settings,  PanelLeftClose, PanelLeftOpen,  BotMessageSquareIcon, Wrench } from 'lucide-react';
 import { IconButton } from '../IconButton/IconButton';
+import { SidebarHistory } from './SidebarHistory';
 import styles from './Sidebar.module.css';
 
 const buttons = [
   { to: "/agent", label: "Chat", icon: BotMessageSquareIcon, end: true },
   { to: "/documents", label: "Files", icon: FileText },
+  { to: "/browser-tools", label: "Browser tools", icon: Wrench },
 
   { to: "/admin/dashboard/settings", label: "Settings", icon: Settings, end: true },
 ];
@@ -60,6 +62,7 @@ export function Sidebar({ id, isOpen = false, isMobile = false, heading, onToggl
           </NavLink>
         ))}
       </nav>
+      <SidebarHistory collapsed={collapsed} onNavigate={onNavLinkClick} />
     </div>
   );
 

@@ -5,6 +5,7 @@ import {
   type Completion,
 } from "./session-store.ts";
 import { abortable, frame, readBoundedText, readEvents } from "./session-stream.ts";
+import type { HistorySink } from "./chat-history.ts";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const SSE_HEADERS = {
@@ -99,27 +100,52 @@ interface ActiveRun {
 
 export class SessionCoordinator {
   private current?: ActiveRun;
+  private syncing?: Promise<void>;
 
   constructor(
     private readonly store: SessionStore,
     private readonly backend: (request: Request) => Promise<Response>,
     private readonly waitUntil: (task: Promise<void>) => void,
     private readonly timeoutMs = 120000,
+    private readonly historySink?: HistorySink,
   ) {}
+
+  private async syncHistory(): Promise<void> {
+    if (!this.historySink) return;
+    if (this.syncing) await this.syncing;
+    const snapshot = this.store.pendingProjection();
+    if (!snapshot) return;
+    const pending = this.historySink.write(snapshot).then(() => {
+      this.store.acknowledgeProjection(snapshot.revision);
+    });
+    this.syncing = pending;
+    try {
+      await pending;
+    } finally {
+      if (this.syncing === pending) this.syncing = undefined;
+    }
+    // A clear or completion may have queued a newer revision while D1 was awaited.
+    await this.syncHistory();
+  }
 
   async fetch(request: Request): Promise<Response> {
     try {
       const sessionId = uuidHeader(request, "x-session-id");
-      this.store.identify(sessionId);
+      const ownerId = request.headers.get("x-chat-owner");
+      if (!ownerId) throw new SessionError("authentication_required", "An authenticated conversation owner is required.", 401);
+      this.store.identify(sessionId, ownerId);
       const path = new URL(request.url).pathname;
       if (path === "/api/history" && request.method === "GET") {
+        await this.syncHistory();
         return Response.json(
           { session_id: sessionId, messages: this.store.history() },
           { headers: { "Cache-Control": "no-store" } },
         );
       }
       if (path === "/api/history" && request.method === "DELETE") {
+        if (this.current) throw new SessionError("session_busy", "Cannot delete history during an active run.", 409);
         this.store.clear(Date.now());
+        await this.syncHistory();
         return new Response(null, { status: 204 });
       }
       if (path === "/api/chat" && request.method === "DELETE") {
@@ -139,6 +165,7 @@ export class SessionCoordinator {
       }
       const requestId = uuidHeader(request, "x-request-id");
       const input = await inputFrom(request);
+      await this.syncHistory();
       const token = crypto.randomUUID();
       const deadline = Date.now() + this.timeoutMs;
       const replay = this.store.claim(requestId, input, token, deadline, Date.now());
@@ -281,6 +308,7 @@ export class SessionCoordinator {
                 if (error instanceof SessionError) throw error;
                 throw new SessionError("storage_failed", "Completed turn could not be persisted.", 500);
               }
+              await this.syncHistory();
               controller.enqueue(frame(completion));
             } catch (error) {
               const result = failure(error);

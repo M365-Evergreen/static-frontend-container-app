@@ -7,6 +7,8 @@ import { NotFoundPage } from "../pages/NotFoundPage";
 import { AgentPage } from "../pages/AgentPage/AgentPage";
 import { DocumentsPage } from "../pages/DocumentsPage/DocumentsPage";
 import { SettingsPage } from "../pages/SettingsPage/SettingsPage";
+import { AuthProvider } from "../auth/AuthProvider";
+import { ChatHistoryProvider } from "../chat/ChatHistoryProvider";
 
 import BrowserToolsLayout from "../browser-tools/BrowserToolsLayout";
 import ToolCatalog from "../browser-tools/components/ToolCatalog";
@@ -45,6 +47,7 @@ const router = createBrowserRouter([
       { path: "/", element: <HomePage /> },
       { path: "/about", element: <AboutPage /> },
       { path: "/agent", element: <AgentPage /> },
+      { path: "/agent/:sessionId", element: <AgentPage /> },
       { path: "/documents", element: <DocumentsPage /> },
       { path: "/admin/dashboard/settings", element: <SettingsPage /> },
       {
@@ -77,5 +80,5 @@ const router = createBrowserRouter([
 ]);
 
 export function AppRouter() {
-  return <RouterProvider router={router} />;
+  return <AuthProvider><ChatHistoryProvider><RouterProvider router={router} /></ChatHistoryProvider></AuthProvider>;
 }
