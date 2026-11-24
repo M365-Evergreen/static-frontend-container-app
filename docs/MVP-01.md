@@ -26,7 +26,7 @@ responsive health endpoint.
 - Changed typechecking to `tsc -b` so all three referenced projects are checked.
   Restored ESLint dependencies and a zero-warning lint command.
 - Confirmed `ASSETS`, `AGENT_CONTAINER` -> `AgentContainer`, SQLite migration
-  `v1`, and Worker name `static-frontend-container-appr`. Declared only
+  `v1`, and Worker name `paulibaby-agentr`. Declared only
   `OPENAI_API_KEY` and regenerated Cloudflare types.
 - Added `agents/uv.lock`, removed unused Anthropic support, and changed the backend
   to a uv-managed application rather than an installed Python distribution.

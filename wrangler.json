@@ -1,26 +1,25 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "static-frontend-container-app",
+  "name": "paulibaby-agent",
   "main": "src/worker/index.ts",
   "compatibility_date": "2026-08-18",
   "compatibility_flags": [
     "nodejs_compat"
   ],
-  "observability": { "enabled": true },
+  "observability": {
+    "enabled": true
+  },
   "vars": {
-    "LLM_PROVIDER": "gemini",
-    "LLM_MODEL": "gemini-3.8-flash",
-    "KNOWLEDGE_MCP_URL": "https://9904ca51-56e6-48cd-ae7e-3e0f154d2724.search.ai.cloudflare.com/mcp",
-    "ENTRA_TENANT_ID": "7a5bf294-6ae8-47c4-b0c4-b2f9166d7a3f",
-    "ENTRA_CLIENT_ID": "7ea67f3b-a85c-4427-855a-578c168edc27",
     "ENTRA_API_AUDIENCE": "7ea67f3b-a85c-4427-855a-578c168edc27",
-    "ENTRA_API_SCOPE": "api://7ea67f3b-a85c-4427-855a-578c168edc27/Chat.Access"
+    "ENTRA_API_SCOPE": "api://7ea67f3b-a85c-4427-855a-578c168edc27/Chat.Access",
+    "ENTRA_CLIENT_ID": "7ea67f3b-a85c-4427-855a-578c168edc27",
+    "ENTRA_TENANT_ID": "7a5bf294-6ae8-47c4-b0c4-b2f9166d7a3f",
+    "KNOWLEDGE_MCP_URL": "https://9904ca51-56e6-48cd-ae7e-3e0f154d2724.search.ai.cloudflare.com/mcp",
+    "LLM_API_KEY": "AQ.Ab8RN6KbXddMt_aNlEGy8YivBfvddQLFEEhVkyb1Re4w_6BTYw",
+    "LLM_MODEL": "gemini-3.8-flash",
+    "LLM_PROVIDER": "gemini"
   },
-  "secrets": {
-    "required": [
-      "LLM_API_KEY"
-    ]
-  },
+
   "assets": {
     "binding": "ASSETS",
     "run_worker_first": [

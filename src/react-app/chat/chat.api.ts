@@ -1,7 +1,7 @@
 import type { ConversationPage, ConversationSummary, HistoryResponse, StoredMessage } from './chat.types.ts';
 import type { ApiRequest } from '../auth/auth-context.ts';
 
-const SESSION_KEY = 'static-frontend-container-app.session-id';
+const SESSION_KEY = 'paulibaby-agent.session-id';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function record(value: unknown): value is Record<string, unknown> {

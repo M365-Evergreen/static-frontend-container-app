@@ -191,7 +191,7 @@ describe('authenticated sidebar history', () => {
   });
 
   it('never restores anonymous session IDs into an authenticated account', () => {
-    localStorage.setItem('static-frontend-container-app.session-id', SESSION);
+    localStorage.setItem('paulibaby-agent.session-id', SESSION);
     const a = restoreSession('account-a');
     const b = restoreSession('account-b');
     expect(a.sessionId).not.toBe(SESSION);

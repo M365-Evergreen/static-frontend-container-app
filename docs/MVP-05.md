@@ -21,7 +21,7 @@ The Cloudflare account is `Paul@365evergreen.com` under account
 `9563d1b7d90e2bb8e1eaafd6abd8e6a8`.
 
 The public Worker deployment is available at
-`https://static-frontend-container-appr.paul-563.workers.dev`.
+`https://paulibaby-agentr.paul-563.workers.dev`.
 At the time of this deployment record, `OPENAI_API_KEY` was bound as a protected
 `secret_text` Worker secret, and the frontend and `/api/history` route were reachable.
 The provider-neutral runtime no longer uses that secret. Before deploying the
