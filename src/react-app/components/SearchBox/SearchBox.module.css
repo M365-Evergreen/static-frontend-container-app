@@ -14,7 +14,7 @@
   .lucideSearch {
     grid-area: icon;
     z-index: 2;
-    margin-inline-start: var(--spacing-2);
+    margin-inline-start: var(--space-xl);
   }
 
   &[data-disabled] .lucideSearch {
@@ -29,7 +29,7 @@
     grid-area: input;
     width: 100%;
     border-radius: var(--border-radius);
-    padding: 0 var(--spacing-8);
+    padding: 0 var(--space-xl);
 
     &::-webkit-search-cancel-button,
     &::-webkit-search-decoration {
@@ -40,10 +40,10 @@
   .clearButton {
     all: unset;
     grid-area: button;
-    width: var(--spacing-4);
-    height: var(--spacing-4);
+    width: var(--space-4);
+    height: var(--space-4);
     border-radius: 9999px;
-    margin-left: calc(-1 * var(--spacing-6));
+    margin-left: calc(-1 * var(--space-md));
     text-align: center;
     background: var(--gray-700);
     color: var(--gray-50);

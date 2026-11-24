@@ -1,0 +1,44 @@
+@import '../../styles/tokens.css';
+
+.documentsPage {
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+}
+
+.commandBar {   
+    background-color: var(--color-accent);
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    padding: 2rem;
+}
+    
+.documentGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+}
+
+.searchBox {
+    background-color: White;
+    color: black;
+    border: 1px solid #ccc;
+    outline: none;
+    font-size: 14px;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 8px;
+    border-radius: 4px;
+}
+
+.commandButton {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.commands {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
