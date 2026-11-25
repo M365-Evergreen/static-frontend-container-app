@@ -41,7 +41,8 @@
     "bindings": [
       {
         "name": "AGENT_CONTAINER",
-        "class_name": "AgentContainer"
+        "class_name": "PaulibabyAgent",
+        "script_name": "agent-paulibaby",
       }
     ]
   },
