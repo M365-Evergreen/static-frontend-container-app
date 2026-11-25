@@ -22,7 +22,8 @@
     "CF_ACCESS_AUDIENCE": "3cca06c718eeae1d5f9104416620e620e64b0772bc9de4b732f4799e472f3603",
     "KNOWLEDGE_MCP_URL": "https://9904ca51-56e6-48cd-ae7e-3e0f154d2724.search.ai.cloudflare.com/mcp",
     "LLM_MODEL": "gemini-3.8-flash",
-    "LLM_PROVIDER": "gemini"
+    "LLM_PROVIDER": "gemini",
+    "LLM_API_KEY": "AQ.Ab8RN6KbXddMt_aNlEGy8YivBfvddQLFEEhVkyb1Re4w_6BTYw"
   },
   "assets": {
     "binding": "ASSETS",
@@ -41,8 +42,7 @@
     "bindings": [
       {
         "name": "AGENT_CONTAINER",
-        "class_name": "PaulibabyAgent",
-        "script_name": "agent-paulibaby",
+        "class_name": "AgentContainer"
       }
     ]
   },
