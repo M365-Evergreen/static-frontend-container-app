@@ -1,7 +1,7 @@
 import {Button, GridList, GridListItem, Text} from 'react-aria-components/GridList';
 import {useDragAndDrop, DropIndicator, isTextDropItem} from 'react-aria-components/useDragAndDrop';
 import {useListData, type ListData} from 'react-aria-components/useListData';
-import React, {ReactNode} from 'react';
+import {ReactNode} from 'react';
 import styles from './KanbanBoard.module.css';
 
 const tickets = [

@@ -23,7 +23,7 @@
     "KNOWLEDGE_MCP_URL": "https://9904ca51-56e6-48cd-ae7e-3e0f154d2724.search.ai.cloudflare.com/mcp",
     "LLM_MODEL": "gemini-3.8-flash",
     "LLM_PROVIDER": "gemini",
-    "LLM_API_KEY": "AQ.Ab8RN6KbXddMt_aNlEGy8YivBfvddQLFEEhVkyb1Re4w_6BTYw"
+    "LLM_API_KEY": "AQ.Ab8RN6Lliqluwmba8ndrdff2kn-TJQFXYF_C01K3lGbRKlaPqg"
   },
   "assets": {
     "binding": "ASSETS",
