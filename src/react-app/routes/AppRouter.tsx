@@ -6,6 +6,7 @@ import { AboutPage } from "../pages/AboutPage";
 import { NotFoundPage } from "../pages/NotFoundPage";
 import { AgentPage } from "../pages/AgentPage/AgentPage";
 import { DocumentsPage } from "../pages/DocumentsPage/DocumentsPage";
+import { TasksPage } from "../pages/TasksPage/TasksPage";
 import { SettingsPage } from "../pages/SettingsPage/SettingsPage";
 import { AuthProvider } from "../auth/AuthProvider";
 import { ChatHistoryProvider } from "../chat/ChatHistoryProvider";
@@ -51,6 +52,7 @@ const router = createBrowserRouter([
       { path: "/agent", element: <AgentPage /> },
       { path: "/agent/:sessionId", element: <AgentPage /> },
       { path: "/documents", element: <DocumentsPage /> },
+      { path: "/tasks", element: <TasksPage /> },
       { path: "/admin/dashboard/settings", element: <SettingsPage /> },
       { path: "/tools", element: <ToolsPage /> },
       {

@@ -12,6 +12,7 @@ import {
   drainPending,
   searchFiles,
 } from "./fileIndex";
+import { handleTasksRequest } from "./tasks.ts";
 
 export interface AccessEnv {
   CF_ACCESS_TEAM_DOMAIN: string;
@@ -481,6 +482,9 @@ export default {
     }
     if (url.pathname === "/api/files/folder") {
       return writeFile(request, env.R2, true);
+    }
+    if (url.pathname === "/api/tasks" || url.pathname.startsWith("/api/tasks/")) {
+      return handleTasksRequest(request, env, `access:${ownerSub}`, auth.email);
     }
 
     if (url.pathname.startsWith("/api/")) {
