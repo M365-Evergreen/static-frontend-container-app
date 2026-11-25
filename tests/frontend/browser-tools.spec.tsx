@@ -95,7 +95,7 @@ describe("browser tools", () => {
   }, 120000);
 
   it("keeps publication menus open during selection and confirms discarding unsaved drafts", async () => {
-    const fetchMock = vi.fn(async () =>
+    const fetchMock = vi.fn(async (_url: string | URL | Request, _init?: RequestInit) =>
       Response.json({ id: "access:test", name: "selected@example.com" }),
     );
     vi.stubGlobal("fetch", fetchMock);
