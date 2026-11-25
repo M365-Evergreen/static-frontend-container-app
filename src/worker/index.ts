@@ -452,12 +452,6 @@ export default {
     if (auth instanceof Response) return auth;
     const ownerSub = auth.sub;
     const url = new URL(request.url);
-    const identityHeaders = new Headers(request.headers);
-    identityHeaders.set("x-chat-owner", `access:${ownerSub}`);
-    identityHeaders.delete("cf-access-jwt-assertion");
-    identityHeaders.delete("authorization");
-    identityHeaders.delete("cf-access-authenticated-user-email");
-    const gatedRequest = new Request(request, { headers: identityHeaders });
     if (request.method === "PUT" && url.pathname.startsWith("/upload/")) {
       const key = url.pathname.slice("/upload/".length);
       await env.R2.put(key, request.body, {
@@ -494,6 +488,11 @@ export default {
         getContainer(env.AGENT_CONTAINER, sessionId).fetch(forwarded));
     }
 
-    return env.ASSETS.fetch(gatedRequest);
+    const identityHeaders = new Headers(request.headers);
+    identityHeaders.set("x-chat-owner", `access:${ownerSub}`);
+    identityHeaders.delete("cf-access-jwt-assertion");
+    identityHeaders.delete("authorization");
+    identityHeaders.delete("cf-access-authenticated-user-email");
+    return env.ASSETS.fetch(new Request(request, { headers: identityHeaders }));
   },
 } satisfies ExportedHandler<Env>;

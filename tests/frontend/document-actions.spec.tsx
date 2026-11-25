@@ -9,6 +9,10 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { DocumentActions } from "../../src/react-app/pages/DocumentsPage/DocumentActions";
 import { DocumentsPage } from "../../src/react-app/pages/DocumentsPage/DocumentsPage";
+import {
+  FileConflictError,
+  saveBucketEntry,
+} from "../../src/react-app/components/FileGrid/files.api";
 
 const uploaded = "2026-11-25T12:00:00Z";
 function saved(key: string) {
@@ -60,6 +64,129 @@ function blobText(blob: Blob): Promise<string> {
 }
 
 describe("bucket creation and uploads", () => {
+  it.each([false, true])(
+    "retries an Access method redirect once with the original write (folder: %s)",
+    async (folder) => {
+      const key = folder ? "reports/empty/" : "reports/notes.md";
+      const content = folder ? null : new Blob(["original content"]);
+      const signal = new AbortController().signal;
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce(
+          Response.json(
+            { error: { code: "method_not_allowed" } },
+            { status: 405 },
+          ),
+        )
+        .mockResolvedValueOnce(saved(key));
+      vi.stubGlobal("fetch", fetchMock);
+      await expect(
+        saveBucketEntry(
+          key,
+          content,
+          signal,
+          folder ? undefined : '"confirmed"',
+        ),
+      ).resolves.toEqual({ key, size: 0, uploaded });
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(fetchMock.mock.calls[1]).toEqual(fetchMock.mock.calls[0]);
+      const options = fetchMock.mock.calls[1]?.[1];
+      expect(options.method).toBe(folder ? "POST" : "PUT");
+      expect(options.signal).toBe(signal);
+      expect(options.cache).toBe("no-store");
+      expect(options.body).toBe(content ?? undefined);
+      expect(new Headers(options.headers).get("If-Match")).toBe(
+        folder ? null : '"confirmed"',
+      );
+    },
+  );
+
+  it("preserves a replacement conflict after an Access retry", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        Response.json(
+          { error: { code: "method_not_allowed" } },
+          { status: 405 },
+        ),
+      )
+      .mockResolvedValueOnce(conflict('"existing"'));
+    vi.stubGlobal("fetch", fetchMock);
+    await expect(
+      saveBucketEntry(
+        "notes.md",
+        new Blob(["notes"]),
+        new AbortController().signal,
+      ),
+    ).rejects.toEqual(
+      new FileConflictError(
+        "A file with this path already exists.",
+        '"existing"',
+      ),
+    );
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it.each([
+    [405, "other_error"],
+    [503, "storage_unavailable"],
+    [401, "missing_access_jwt"],
+  ])("does not retry an unrelated %s error", async (status, code) => {
+    const fetchMock = vi.fn(async () =>
+      Response.json(
+        { error: { code, message: "Original failure." } },
+        { status },
+      ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    await expect(
+      saveBucketEntry(
+        "notes.md",
+        new Blob(["notes"]),
+        new AbortController().signal,
+      ),
+    ).rejects.toThrow("Original failure.");
+    expect(fetchMock).toHaveBeenCalledOnce();
+  });
+
+  it("surfaces an unparseable 405 and never retries repeatedly", async () => {
+    for (const malformed of [true, false]) {
+      const fetchMock = vi.fn(async () =>
+        malformed
+          ? new Response("Not JSON", { status: 405 })
+          : Response.json(
+              { error: { code: "method_not_allowed", message: "Use PUT." } },
+              { status: 405 },
+            ),
+      );
+      vi.stubGlobal("fetch", fetchMock);
+      await expect(
+        saveBucketEntry(
+          "notes.md",
+          new Blob(["notes"]),
+          new AbortController().signal,
+        ),
+      ).rejects.toThrow(malformed ? "Request failed (405)." : "Use PUT.");
+      expect(fetchMock).toHaveBeenCalledTimes(malformed ? 1 : 2);
+    }
+  });
+
+  it("does not retry an Access redirect after cancellation", async () => {
+    const controller = new AbortController();
+    const fetchMock = vi.fn(async () => {
+      controller.abort();
+      return Response.json(
+        { error: { code: "method_not_allowed" } },
+        { status: 405 },
+      );
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    await expect(
+      saveBucketEntry("notes.md", new Blob(["notes"]), controller.signal),
+    ).rejects.toBe(controller.signal.reason);
+    expect(fetchMock).toHaveBeenCalledOnce();
+  });
+
   it("creates an edited text file with its destination, exact content and media type, then refreshes", async () => {
     const fetchMock = vi.fn<
       (url: string, init: RequestInit) => Promise<Response>

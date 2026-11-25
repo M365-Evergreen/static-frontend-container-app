@@ -111,21 +111,42 @@ export async function saveBucketEntry(
   const folder = content === null;
   const invalidKey = fileKeyError(key, folder);
   if (invalidKey) throw new Error(invalidKey);
-  const response = await fetch(
-    `/api/files/${folder ? "folder" : "upload"}?${new URLSearchParams({ key })}`,
-    {
-      method: folder ? "POST" : "PUT",
-      headers: {
-        ...(!folder
-          ? { "Content-Type": content.type || "application/octet-stream" }
-          : {}),
-        ...(etag ? { "If-Match": etag } : {}),
+  const send = () =>
+    fetch(
+      `/api/files/${folder ? "folder" : "upload"}?${new URLSearchParams({ key })}`,
+      {
+        method: folder ? "POST" : "PUT",
+        headers: {
+          ...(!folder
+            ? { "Content-Type": content.type || "application/octet-stream" }
+            : {}),
+          ...(etag ? { "If-Match": etag } : {}),
+        },
+        ...(content === null ? {} : { body: content }),
+        signal,
+        cache: "no-store",
       },
-      ...(content === null ? {} : { body: content }),
-      signal,
-      cache: "no-store",
-    },
-  );
+    );
+  let response = await send();
+  if (response.status === 405) {
+    const payload: unknown = await response
+      .clone()
+      .json()
+      .catch(() => null);
+    if (
+      typeof payload === "object" &&
+      payload !== null &&
+      "error" in payload &&
+      typeof payload.error === "object" &&
+      payload.error !== null &&
+      "code" in payload.error &&
+      payload.error.code === "method_not_allowed"
+    ) {
+      // Access may refresh its cookie while redirecting the write into a GET.
+      signal.throwIfAborted();
+      response = await send();
+    }
+  }
   if (response.status === 409 && !folder) {
     const payload: unknown = await response.json();
     if (
@@ -160,3 +181,5 @@ export async function saveBucketEntry(
   }
   return payload.file;
 }
+
+export { saveBucketEntry as saveFile };
