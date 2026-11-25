@@ -1,19 +1,33 @@
-import { useId } from 'react';
-import { Link, NavLink } from 'react-router-dom';
-import { Dialog } from 'react-aria-components/Dialog';
-import { Modal, ModalOverlay } from 'react-aria-components/Modal';
-import {Avatar} from '@react-spectrum/s2';
-import { FileText, Settings,  PanelLeftClose, PanelLeftOpen,  BotMessageSquareIcon, Wrench } from 'lucide-react';
-import { IconButton } from '../IconButton/IconButton';
-import { SidebarHistory } from './SidebarHistory';
-import styles from './Sidebar.module.css';
+import { useId } from "react";
+import { Link, NavLink } from "react-router-dom";
+import { Dialog } from "react-aria-components/Dialog";
+import { Modal, ModalOverlay } from "react-aria-components/Modal";
+import { Avatar } from "@react-spectrum/s2";
+import {
+  FileText,
+  Settings,
+  PanelLeftClose,
+  PanelLeftOpen,
+  BotMessageSquareIcon,
+  Wrench,
+  ListChecks,
+} from "lucide-react";
+import { IconButton } from "../IconButton/IconButton";
+import { SidebarHistory } from "./SidebarHistory";
+import styles from "./Sidebar.module.css";
 
 const buttons = [
   { to: "/agent", label: "Chat", icon: BotMessageSquareIcon, end: true },
   { to: "/documents", label: "Files", icon: FileText },
+  { to: "/tasks", label: "Tasks", icon: ListChecks },
   { to: "/browser-tools", label: "Browser tools", icon: Wrench },
 
-  { to: "/admin/dashboard/settings", label: "Settings", icon: Settings, end: true },
+  {
+    to: "/admin/dashboard/settings",
+    label: "Settings",
+    icon: Settings,
+    end: true,
+  },
 ];
 
 interface Props {
@@ -26,26 +40,45 @@ interface Props {
   onNavLinkClick?: () => void;
 }
 
-export function Sidebar({ id, isOpen = false, isMobile = false, heading, onToggle, items = buttons, onNavLinkClick }: Props) {
+export function Sidebar({
+  id,
+  isOpen = false,
+  isMobile = false,
+  heading,
+  onToggle,
+  items = buttons,
+  onNavLinkClick,
+}: Props) {
   const generatedId = useId();
   const collapsed = !isMobile && !isOpen;
   const content = (
     <div className={styles.content}>
       <div className={styles.heading}>
-        {heading ? <h2 hidden={collapsed}>{heading}</h2> : (
-          <Link to="/" className={styles.brand} onClick={onNavLinkClick} hidden={collapsed}>Paulibaby</Link>
+        {heading ? (
+          <h2 hidden={collapsed}>{heading}</h2>
+        ) : (
+          <Link
+            to="/"
+            className={styles.brand}
+            onClick={onNavLinkClick}
+            hidden={collapsed}
+          >
+            Paulibaby
+          </Link>
         )}
         <IconButton
           onPress={onToggle}
-          aria-label={collapsed ? 'Show sidebar' : 'Hide sidebar'}
-          tooltip={collapsed ? 'Show sidebar' : 'Hide sidebar'}
+          aria-label={collapsed ? "Show sidebar" : "Hide sidebar"}
+          tooltip={collapsed ? "Show sidebar" : "Hide sidebar"}
           aria-expanded={isOpen}
           aria-controls={id ?? generatedId}
           className={styles.close}
         >
-          {collapsed
-            ? <PanelLeftOpen size={20} aria-hidden="true" />
-            : <PanelLeftClose size={20} aria-hidden="true" />}
+          {collapsed ? (
+            <PanelLeftOpen size={20} aria-hidden="true" />
+          ) : (
+            <PanelLeftClose size={20} aria-hidden="true" />
+          )}
         </IconButton>
       </div>
       <nav aria-label="Admin navigation" className={styles.navigation}>
@@ -56,7 +89,9 @@ export function Sidebar({ id, isOpen = false, isMobile = false, heading, onToggl
             end={end}
             onClick={onNavLinkClick}
             title={collapsed ? label : undefined}
-            className={({ isActive }) => `${styles.navLink} ${isActive ? styles.navActive : ''}`}
+            className={({ isActive }) =>
+              `${styles.navLink} ${isActive ? styles.navActive : ""}`
+            }
           >
             <Icon size={20} strokeWidth={1.5} aria-hidden="true" />
             <span className={styles.label}>{label}</span>
@@ -64,8 +99,8 @@ export function Sidebar({ id, isOpen = false, isMobile = false, heading, onToggl
         ))}
       </nav>
       <div className={styles.avatar}>
-        <Avatar  />
-      </div>  
+        <Avatar />
+      </div>
       <SidebarHistory collapsed={collapsed} onNavigate={onNavLinkClick} />
     </div>
   );
@@ -74,12 +109,18 @@ export function Sidebar({ id, isOpen = false, isMobile = false, heading, onToggl
     return (
       <ModalOverlay
         isOpen={isOpen}
-        onOpenChange={(open) => { if (!open) onToggle(); }}
+        onOpenChange={(open) => {
+          if (!open) onToggle();
+        }}
         isDismissable
         className={styles.backdrop}
       >
         <Modal className={styles.drawer}>
-          <Dialog id={id ?? generatedId} aria-label={heading ?? 'Admin navigation'} className={styles.dialog}>
+          <Dialog
+            id={id ?? generatedId}
+            aria-label={heading ?? "Admin navigation"}
+            className={styles.dialog}
+          >
             {content}
           </Dialog>
         </Modal>
@@ -90,7 +131,7 @@ export function Sidebar({ id, isOpen = false, isMobile = false, heading, onToggl
   return (
     <aside
       id={id ?? generatedId}
-      className={`${styles.sidebar} ${isOpen ? styles.sidebarOpen : ''}`}
+      className={`${styles.sidebar} ${isOpen ? styles.sidebarOpen : ""}`}
       aria-label="Admin navigation"
     >
       {content}

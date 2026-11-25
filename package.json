@@ -13,6 +13,8 @@
     "preview": "vite preview",
     "deploy": "pnpm run build && wrangler deploy",
     "cf-typegen": "wrangler types",
+     "db:migrate:local": "wrangler d1 migrations apply DB --local",
+    "db:migrate": "wrangler d1 migrations apply DB --remote",
     "typecheck": "tsc -b",
     "test:worker": "tsc -p tsconfig.tests.json --noEmit false --rewriteRelativeImportExtensions --outDir .wrangler/worker-tests && node --test .wrangler/worker-tests/tests/worker/*.test.js",
     "test:frontend": "tsc -p tsconfig.tests.json --noEmit false --rewriteRelativeImportExtensions --outDir .wrangler/test-run && node --test .wrangler/test-run/tests/frontend/*.test.js",
