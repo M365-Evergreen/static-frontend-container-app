@@ -22,6 +22,7 @@
   "dependencies": {
     "@cloudflare/containers": "0.0.25",
     "@fluentui/react": "8.125.10",
+    "@react-spectrum/s2": "^1.8.2",
     "@tiptap/core": "3.35.0",
     "@tiptap/extension-image": "3.35.0",
     "@tiptap/extension-table": "3.35.0",

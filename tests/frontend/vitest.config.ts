@@ -5,7 +5,7 @@ export default defineConfig({
   plugins: [react()],
   test: {
     environment: 'jsdom',
-    include: ['tests/frontend/*.spec.tsx'],
+    include: ['tests/frontend/*.spec.tsx', 'tests/worker/*.spec.ts'],
     setupFiles: ['tests/frontend/setup.ts'],
     restoreMocks: true,
   },

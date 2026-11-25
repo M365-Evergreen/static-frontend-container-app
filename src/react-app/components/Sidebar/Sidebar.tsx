@@ -2,6 +2,7 @@ import { useId } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { Dialog } from 'react-aria-components/Dialog';
 import { Modal, ModalOverlay } from 'react-aria-components/Modal';
+import {Avatar} from '@react-spectrum/s2';
 import { FileText, Settings,  PanelLeftClose, PanelLeftOpen,  BotMessageSquareIcon, Wrench } from 'lucide-react';
 import { IconButton } from '../IconButton/IconButton';
 import { SidebarHistory } from './SidebarHistory';
@@ -62,6 +63,9 @@ export function Sidebar({ id, isOpen = false, isMobile = false, heading, onToggl
           </NavLink>
         ))}
       </nav>
+      <div className={styles.avatar}>
+        <Avatar  />
+      </div>  
       <SidebarHistory collapsed={collapsed} onNavigate={onNavLinkClick} />
     </div>
   );
