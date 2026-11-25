@@ -17,6 +17,9 @@ import {
 import {
   CalendarDays,
   Check,
+  DeleteIcon,
+  EditIcon,
+  View,
   LayoutGrid,
   List,
   MessageSquare,
@@ -75,7 +78,7 @@ const emptyEditor = (status: TaskStatus = "todo"): EditorState => ({
 
 export function TasksPage() {
   const [tasks, setTasks] = useState<TaskRecord[]>([]);
-  const [projectName, setProjectName] = useState("Online Marketing");
+ // const [projectName, setProjectName] = useState("Online Marketing");
   const [view, setView] = useState<"board" | "list">("board");
   const [query, setQuery] = useState("");
   const [editor, setEditor] = useState<EditorState | null>(null);
@@ -91,7 +94,7 @@ export function TasksPage() {
     setError("");
     try {
       const data = await loadTasks(active);
-      setProjectName(data.project.name);
+      // setProjectName(data.project.name);
       setTasks(data.tasks);
     } catch (reason) {
       if (!active.aborted) {
@@ -217,7 +220,7 @@ export function TasksPage() {
       <header className={styles.header}>
         <div>
           <div className={styles.breadcrumb}>Planner</div>
-          <h1>{projectName}</h1>
+       {/* <h1>{projectName}</h1> */}
         </div>
         <div className={styles.headerActions}>
           <TextField aria-label="Search tasks" className={styles.searchField}>
@@ -441,8 +444,9 @@ export function TasksPage() {
                     if (action === "delete") void removeTask(task.task_id);
                   }}
                 >
-                  <MenuItem id="edit">Edit task</MenuItem>
-                  <MenuItem id="delete">Delete task</MenuItem>
+                  <Button id="edit"><EditIcon size={16} aria-hidden="true" /></Button>
+                  <Button id="delete"><DeleteIcon size={16} aria-hidden="true" /></Button>
+                <Button id="view"><View size={16} aria-hidden="true" /></Button>
                 </Menu>
               </MenuTrigger>
             </div>
