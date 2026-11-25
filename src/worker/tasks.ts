@@ -122,7 +122,7 @@ async function ensureStarterTasks(
     const taskId = crypto.randomUUID();
     return db
       .prepare(
-        `INSERT INTO tasks
+        `INSERT INTO task_records
          (task_id, project_id, owner_id, title, description, status, priority, due_date)
          VALUES (?, ?, ?, ?, ?, ?, ?, NULL)`,
       )
@@ -149,7 +149,7 @@ async function readTasks(
     .prepare(
       `SELECT task_id, project_id, title, description, status, priority,
               due_date, created_at, updated_at
-       FROM tasks
+       FROM task_records
        WHERE owner_id = ? AND project_id = ?
        ORDER BY created_at ASC`,
     )
@@ -187,7 +187,23 @@ export async function handleTasksRequest(
   ownerId: string,
   email: string | undefined,
 ): Promise<Response> {
-  await ensureOwner(env.DB, ownerId, email);
+  try {
+    await ensureOwner(env.DB, ownerId, email);
+  } catch (error) {
+    console.error(
+      JSON.stringify({
+        event: "task_storage_failed",
+        error: error instanceof Error ? error.message : String(error),
+      }),
+    );
+    return errorResponse(
+      new SessionError(
+        "task_storage_unavailable",
+        "Tasks could not be loaded. Try again.",
+        503,
+      ),
+    );
+  }
   const url = new URL(request.url);
   const taskMatch = url.pathname.match(/^\/api\/tasks\/([A-Za-z0-9-]+)$/);
 
@@ -262,7 +278,7 @@ export async function handleTasksRequest(
       const projectId = await ensureStarterTasks(env.DB, ownerId);
       const taskId = crypto.randomUUID();
       await env.DB.prepare(
-        `INSERT INTO tasks
+        `INSERT INTO task_records
            (task_id, project_id, owner_id, title, description, status, priority, due_date)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       )
@@ -280,7 +296,7 @@ export async function handleTasksRequest(
       const task = await env.DB.prepare(
         `SELECT task_id, project_id, title, description, status, priority,
                   due_date, created_at, updated_at
-           FROM tasks WHERE task_id = ? AND owner_id = ?`,
+           FROM task_records WHERE task_id = ? AND owner_id = ?`,
       )
         .bind(taskId, ownerId)
         .first<TaskRecord>();
@@ -366,7 +382,7 @@ export async function handleTasksRequest(
     values.push(now(), taskId, ownerId);
     try {
       const result = await env.DB.prepare(
-        `UPDATE tasks SET ${fields.join(", ")}
+        `UPDATE task_records SET ${fields.join(", ")}
            WHERE task_id = ? AND owner_id = ?`,
       )
         .bind(...values)
@@ -383,7 +399,7 @@ export async function handleTasksRequest(
       const task = await env.DB.prepare(
         `SELECT task_id, project_id, title, description, status, priority,
                   due_date, created_at, updated_at
-           FROM tasks WHERE task_id = ? AND owner_id = ?`,
+           FROM task_records WHERE task_id = ? AND owner_id = ?`,
       )
         .bind(taskId, ownerId)
         .first<TaskRecord>();
@@ -410,7 +426,7 @@ export async function handleTasksRequest(
   if (request.method === "DELETE" && taskMatch) {
     const taskId = taskMatch[1] ?? "";
     const result = await env.DB.prepare(
-      `DELETE FROM tasks WHERE task_id = ? AND owner_id = ?`,
+      `DELETE FROM task_records WHERE task_id = ? AND owner_id = ?`,
     )
       .bind(taskId, ownerId)
       .run();
