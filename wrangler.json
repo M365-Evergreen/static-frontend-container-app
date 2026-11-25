@@ -9,6 +9,14 @@
   "observability": {
     "enabled": true
   },
+  "previews": {
+    "d1_databases": [
+      {
+        "binding": "DB",
+        "database_id": "e33c33ce-55ad-49b4-8d89-02e1718d1d03"
+      }
+    ]
+  },
   "vars": {
     "CF_ACCESS_TEAM_DOMAIN": "paulibaby.cloudflareaccess.com",
     "CF_ACCESS_AUDIENCE": "3cca06c718eeae1d5f9104416620e620e64b0772bc9de4b732f4799e472f3603",
