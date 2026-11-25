@@ -38,6 +38,7 @@ import {
   type TaskStatus,
 } from "../../components/TasksGrid/tasks.api";
 import styles from "./TasksPage.module.css";
+import  KanbanBoard from "../../components/KanbanBoard/KanbanBoard";
 
 const columns: Array<{ id: TaskStatus; label: string }> = [
   { id: "todo", label: "To do" },
@@ -216,7 +217,8 @@ export function TasksPage() {
   });
 
   return (
-    <div className={styles.page}>
+    <div className={styles.page}> 
+      <KanbanBoard />
       <header className={styles.header}>
         <div>
           <div className={styles.breadcrumb}>Planner</div>
