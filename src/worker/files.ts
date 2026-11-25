@@ -247,7 +247,10 @@ export async function writeFile(
       : { "If-Match": expectedEtag },
   );
   try {
-    const object = await bucket.put(key, request.body ?? new Uint8Array(), {
+    const body = folder || request.body === null
+      ? new Uint8Array()
+      : new Uint8Array(await new Response(request.body).arrayBuffer());
+    const object = await bucket.put(key, body, {
       onlyIf,
       httpMetadata: {
         contentType: folder
@@ -289,8 +292,14 @@ export async function writeFile(
         headers: { "Cache-Control": "no-store" },
       },
     );
-  } catch {
-    console.error("R2 file write failed.");
+  } catch (error) {
+    console.error(
+      JSON.stringify({
+        event: "r2_file_write_failed",
+        key,
+        error: error instanceof Error ? error.message : String(error),
+      }),
+    );
     return errorResponse(
       new SessionError(
         "storage_unavailable",
