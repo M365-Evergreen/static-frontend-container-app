@@ -258,6 +258,7 @@
   line-height: 1.35;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 .cardMeta {
@@ -537,9 +538,9 @@
 }
 
 .modalActions .saveButton {
-  border-color: #2f6fed;
-  background: #2f6fed;
-  color: #fff;
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
   font-weight: 700;
 }
 

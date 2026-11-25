@@ -28,4 +28,13 @@
   --space-xl: 2.5rem;
   --container-max-width: 64rem;
   --radius-sm: 10px;
+
+
+  --sidebar-expanded-width: 280px;
+  --sidebar-collapsed-width: 72px;
+  --sidebar-current-width: var(--sidebar-expanded-width);
+
+.layout[data-sidebar='collapsed'] {
+  --sidebar-current-width: var(--sidebar-collapsed-width);
+}
 }
