@@ -9,8 +9,7 @@ export default defineConfig({
       build: {
         rollupOptions: {
           input: {
-            main: new URL("./index.html", import.meta.url).pathname,
-            redirect: new URL("./redirect.html", import.meta.url).pathname,
+            main: new URL("./index.html", import.meta.url).pathname
           },
         },
       },

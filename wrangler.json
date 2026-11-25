@@ -16,7 +16,6 @@
     "LLM_MODEL": "gemini-3.8-flash",
     "LLM_PROVIDER": "gemini"
   },
-
   "assets": {
     "binding": "ASSETS",
     "run_worker_first": true,
