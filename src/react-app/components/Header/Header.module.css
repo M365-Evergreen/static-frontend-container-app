@@ -1,5 +1,24 @@
+:root {
+  --sidebar-expanded-width: 280px;
+  --sidebar-collapsed-width: 72px;
+  /* Set default active width */
+  --sidebar-current-width: var(--sidebar-expanded-width);
+}
+
+/* Update the variable when the layout has the collapsed state */
+.layout[data-sidebar="collapsed"],
+.layout.is-collapsed {
+  --sidebar-current-width: var(--sidebar-collapsed-width);
+}
+
+/* Alternative: If .sidebar comes immediately before .header in the DOM */
+/* .sidebar.is-collapsed + .header {
+  --sidebar-current-width: var(--sidebar-collapsed-width);
+} */
+
 .header {
-  width: calc(100% - var(--sidebar-expanded-width));
+  /* Reference the dynamic variable */
+  width: calc(100% - var(--sidebar-current-width));
   display: flex;
   min-height: 4.5rem;
   justify-content: space-between;
@@ -7,26 +26,12 @@
   padding: 0.75rem clamp(1rem, 3vw, 2rem);
   background: var(--color-bg-primary);
   position: fixed;
-    transition:
-    width 200ms ease,
-    left 200ms ease;
+  transition: width 200ms ease, left 200ms ease;
   top: 0;
   right: 0;
 }
 
-:root {
-  --sidebar-expanded-width: 280px;
-  --sidebar-collapsed-width: 72px;
-}
 
-.header {
-  position: fixed;
-  top: 0;
-  right: 0;
-
-
-
-}
 
 .headerCollapsed {
   width: calc(100% - var(--sidebar-collapsed-width));

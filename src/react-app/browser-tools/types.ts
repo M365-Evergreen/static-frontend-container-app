@@ -2,6 +2,7 @@ export type ToolId =
   | "theme-designer"
   | "formatter"
   | "html-to-md"
+  | "html-to-json"
   | "pdf-generator"
   | "publication-designer"
   | "image-converter"

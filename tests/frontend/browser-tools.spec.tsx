@@ -12,6 +12,7 @@ import { describe, expect, it, vi } from "vitest";
 import CodeFormatter from "../../src/react-app/browser-tools/tools/CodeFormatter";
 import DataConverter from "../../src/react-app/browser-tools/tools/DataConverter";
 import HtmlToMarkdown from "../../src/react-app/browser-tools/tools/HtmlToMarkdown";
+import HtmlToJson from "../../src/react-app/browser-tools/tools/HtmlToJson";
 import CryptoHasher from "../../src/react-app/browser-tools/tools/CryptoHasher";
 import PdfGenerator from "../../src/react-app/browser-tools/tools/PdfGenerator";
 import ThemeDesigner from "../../src/react-app/browser-tools/tools/ThemeDesigner";
@@ -46,14 +47,16 @@ async function selectOption(label: string, option: string) {
 }
 
 describe("browser tools", () => {
-  it("opens all eight real tools from the application and filters the catalog without requests", async () => {
-    const fetchMock = vi.fn();
+  it("opens all nine real tools from the application and filters the catalog without requests", async () => {
+    const fetchMock = vi.fn(async (_url: string | URL | Request, _init?: RequestInit) =>
+      Response.json({ id: "access:test", name: "selected@example.com" }),
+    );
     vi.stubGlobal("fetch", fetchMock);
     window.history.replaceState(null, "", "/browser-tools");
     const { default: App } = await import("../../src/react-app/App");
     render(<App />);
     expect(
-      screen.getByRole("heading", { name: "Available tools (8)" }),
+      screen.getByRole("heading", { name: "Available tools (9)" }),
     ).toBeTruthy();
     const search = screen.getByRole("searchbox", { name: "Search tools" });
     fireEvent.change(search, { target: { value: "sha256" } });
@@ -67,6 +70,7 @@ describe("browser tools", () => {
     for (const name of [
       "Code Formatter",
       "HTML to Markdown",
+      "HTML to JSON",
       "PDF Generator",
       "Image Converter & Resizer",
       "CSV / JSON Converter",
@@ -84,11 +88,16 @@ describe("browser tools", () => {
       );
       expect(screen.queryByRole("alert")).toBeNull();
     }
-    expect(fetchMock).not.toHaveBeenCalled();
+    const toolCalls = fetchMock.mock.calls.filter(
+      ([url]) => !["/api/auth/status", "/api/auth/config", "/api/conversations"].includes(String(url)),
+    );
+    expect(toolCalls).toEqual([]);
   }, 120000);
 
   it("keeps publication menus open during selection and confirms discarding unsaved drafts", async () => {
-    const fetchMock = vi.fn();
+    const fetchMock = vi.fn(async () =>
+      Response.json({ id: "access:test", name: "selected@example.com" }),
+    );
     vi.stubGlobal("fetch", fetchMock);
     window.history.replaceState(
       null,
@@ -139,9 +148,12 @@ describe("browser tools", () => {
       ).getByRole("button", { name: "Discard and leave" }),
     );
     expect(
-      await screen.findByRole("heading", { name: "Available tools (8)" }),
+      await screen.findByRole("heading", { name: "Available tools (9)" }),
     ).toBeTruthy();
-    expect(fetchMock).not.toHaveBeenCalled();
+    const toolCalls = fetchMock.mock.calls.filter(
+      ([url]) => !["/api/auth/status", "/api/auth/config", "/api/conversations"].includes(String(url)),
+    );
+    expect(toolCalls).toEqual([]);
   }, 120000);
 
   it("formats TypeScript with accessible selection and clears stale output on input edits", async () => {
@@ -209,7 +221,9 @@ describe("browser tools", () => {
   });
 
   it("converts HTML as inert input without fetching resources or executing scripts", async () => {
-    const fetchMock = vi.fn();
+    const fetchMock = vi.fn(async (_url: string | URL | Request, _init?: RequestInit) =>
+      Response.json({ id: "access:test", name: "selected@example.com" }),
+    );
     vi.stubGlobal("fetch", fetchMock);
     render(<HtmlToMarkdown />);
     fireEvent.change(screen.getByRole("textbox", { name: "HTML source" }), {
@@ -233,6 +247,28 @@ describe("browser tools", () => {
     });
     expect(fetchMock).not.toHaveBeenCalled();
     expect(document.querySelector("img")).toBeNull();
+  });
+
+  it("converts HTML elements and attributes to JSON", async () => {
+    render(<HtmlToJson />);
+    fireEvent.change(screen.getByRole("textbox", { name: "HTML input" }), {
+      target: {
+        value:
+          '<div class="card" id="promo"><h2>Welcome</h2><p>Convert <strong>HTML</strong> to JSON.</p></div>',
+      },
+    });
+    await userEvent
+      .setup()
+      .click(screen.getByRole("button", { name: "Convert to JSON" }));
+    await waitFor(() =>
+      expect(
+        screen.getByRole("textbox", { name: "JSON output" }),
+      ).toHaveProperty("value", expect.stringContaining('"tag": "div"')),
+    );
+    expect(screen.getByRole("textbox", { name: "JSON output" })).toHaveProperty(
+      "value",
+      expect.stringContaining('"class": "card"'),
+    );
   });
 
   it("encodes UTF-8 text in the UI and rejects invalid Base64", async () => {

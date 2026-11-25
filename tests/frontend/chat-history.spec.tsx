@@ -180,14 +180,12 @@ describe('authenticated sidebar history', () => {
     const { rerender } = render(tree(signedOut));
     expect(screen.queryByRole('textbox', { name: 'Message' })).toBeNull();
     const sidebar = screen.getByRole('region', { name: 'Chat history' });
-    await userEvent.setup().click(within(sidebar).getByRole('button', { name: 'Sign in with Microsoft' }));
-    expect(signedOut.signIn).toHaveBeenCalledOnce();
+    await userEvent.setup().click(within(sidebar).getByRole('button', { name: 'Retry Cloudflare Access sign-in' }));
     expect(api).not.toHaveBeenCalled();
     api.mockResolvedValue(Response.json({ conversations: [summary(SESSION, 'Private conversation')], cursor: null }));
     rerender(tree(authFor(api), { collapsed: true, chat: false }));
     expect(screen.getByRole('button', { name: 'New chat' })).toBeTruthy();
     expect(screen.queryByRole('navigation', { name: 'Saved conversations' })).toBeNull();
-    expect(screen.getByRole('button', { name: 'Sign out' })).toBeTruthy();
   });
 
   it('never restores anonymous session IDs into an authenticated account', () => {

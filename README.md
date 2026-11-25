@@ -39,13 +39,14 @@ The Worker serves assets through `ASSETS` and routes `/api/*` to
 `AGENT_CONTAINER` before SPA fallback. Requests with the same session UUID
 address the same Durable Object and container.
 Containers sleep after ten minutes of inactivity. Their memory and filesystem
-are ephemeral. The Durable Object explicitly stores completed exchanges in its
-SQLite-backed storage and supplies that history to every Python run.
+are ephemeral. D1 stores authoritative conversation transcripts and catalogue
+metadata. The Durable Object stores in-flight request coordination and also
+supplies history to Python runs while synchronising completed exchanges to D1.
 
-All conversation endpoints require `x-session-id`; there is no shared default or
-query-string alternative. UUIDs identify conversations, not authenticated users:
-someone who knows a session UUID can access that conversation. Add private access
-and ownership controls before exposing sensitive history or a paid-model endpoint.
+All conversation endpoints require a Cloudflare Access session and
+`x-session-id`; there is no shared default or query-string alternative. UUIDs
+identify conversations, not authenticated users. The Worker verifies the
+Cloudflare Access JWT assertion and binds history to the verified Access subject.
 
 ## Project structure
 

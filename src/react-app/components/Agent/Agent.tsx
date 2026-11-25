@@ -93,7 +93,7 @@ function Agent({ sessionId }: { sessionId?: string }) {
   if (!auth.account || auth.loading) {
     return <section className={styles.shell} aria-label="Chat sign-in">
       <h2>Sign in to chat</h2>
-      <p>Your conversations are private to your Microsoft account.</p>
+      <p>Your conversations are private to your Cloudflare Access account.</p>
       <AuthControls />
     </section>;
   }

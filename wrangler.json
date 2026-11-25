@@ -10,21 +10,16 @@
     "enabled": true
   },
   "vars": {
-    "ENTRA_API_AUDIENCE": "7ea67f3b-a85c-4427-855a-578c168edc27",
-    "ENTRA_API_SCOPE": "api://7ea67f3b-a85c-4427-855a-578c168edc27/Chat.Access",
-    "ENTRA_CLIENT_ID": "7ea67f3b-a85c-4427-855a-578c168edc27",
-    "ENTRA_TENANT_ID": "7a5bf294-6ae8-47c4-b0c4-b2f9166d7a3f",
+    "CF_ACCESS_TEAM_DOMAIN": "paulibaby.cloudflareaccess.com",
+    "CF_ACCESS_AUDIENCE": "3cca06c718eeae1d5f9104416620e620e64b0772bc9de4b732f4799e472f3603",
     "KNOWLEDGE_MCP_URL": "https://9904ca51-56e6-48cd-ae7e-3e0f154d2724.search.ai.cloudflare.com/mcp",
-    "LLM_API_KEY": "AQ.Ab8RN6KbXddMt_aNlEGy8YivBfvddQLFEEhVkyb1Re4w_6BTYw",
     "LLM_MODEL": "gemini-3.8-flash",
     "LLM_PROVIDER": "gemini"
   },
 
   "assets": {
     "binding": "ASSETS",
-    "run_worker_first": [
-      "/api/*"
-    ],
+    "run_worker_first": true,
     "not_found_handling": "single-page-application"
   },
   "containers": [
