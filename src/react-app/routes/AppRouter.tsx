@@ -9,6 +9,7 @@ import { DocumentsPage } from "../pages/DocumentsPage/DocumentsPage";
 import { SettingsPage } from "../pages/SettingsPage/SettingsPage";
 import { AuthProvider } from "../auth/AuthProvider";
 import { ChatHistoryProvider } from "../chat/ChatHistoryProvider";
+import ToolsPage from "../pages/ToolsPage";
 
 import BrowserToolsLayout from "../browser-tools/BrowserToolsLayout";
 import ToolCatalog from "../browser-tools/components/ToolCatalog";
@@ -22,6 +23,7 @@ const CodeFormatter = lazy(
 const HtmlToMarkdown = lazy(
   () => import("../browser-tools/tools/HtmlToMarkdown"),
 );
+const HtmlToJson = lazy(() => import("../browser-tools/tools/HtmlToJson"));
 const PdfGenerator = lazy(() => import("../browser-tools/tools/PdfGenerator"));
 const ImageConverter = lazy(
   () => import("../browser-tools/tools/ImageConverter"),
@@ -50,6 +52,7 @@ const router = createBrowserRouter([
       { path: "/agent/:sessionId", element: <AgentPage /> },
       { path: "/documents", element: <DocumentsPage /> },
       { path: "/admin/dashboard/settings", element: <SettingsPage /> },
+      { path: "/tools", element: <ToolsPage /> },
       {
         path: "/browser-tools",
         element: <BrowserToolsLayout />,
@@ -58,6 +61,7 @@ const router = createBrowserRouter([
           { index: true, element: <ToolCatalog /> },
           { path: "formatter", element: <CodeFormatter /> },
           { path: "html-to-md", element: <HtmlToMarkdown /> },
+          { path: "html-to-json", element: <HtmlToJson /> },
           { path: "pdf-generator", element: <PdfGenerator /> },
           { path: "image-converter", element: <ImageConverter /> },
           { path: "data-converter", element: <DataConverter /> },
@@ -80,5 +84,11 @@ const router = createBrowserRouter([
 ]);
 
 export function AppRouter() {
-  return <AuthProvider><ChatHistoryProvider><RouterProvider router={router} /></ChatHistoryProvider></AuthProvider>;
+  return (
+    <AuthProvider>
+      <ChatHistoryProvider>
+        <RouterProvider router={router} />
+      </ChatHistoryProvider>
+    </AuthProvider>
+  );
 }

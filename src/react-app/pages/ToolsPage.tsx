@@ -1,12 +1,12 @@
-import {} from 'react'
-import {SearchBox} from '../components/SearchBox/SearchBox';
+import HtmlToJsonConverter from "../components/HTMLtoJSON";
+import styles from "../browser-tools/BrowserTools.module.css";
 
 export function ToolsPage() {
-    return (
-        <>
-            <SearchBox />
-        </>
-    );
+  return (
+    <div className={styles.root}>
+      <HtmlToJsonConverter />
+    </div>
+  );
 }
 
 export default ToolsPage;

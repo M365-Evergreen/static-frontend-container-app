@@ -9,6 +9,7 @@ import {
   ShieldCheck,
   Palette,
   BookOpen,
+  Braces,
 } from "lucide-react";
 import { filterTools, toolPath } from "../toolRegistry";
 import styles from "../BrowserTools.module.css";
@@ -17,6 +18,7 @@ const icons = {
   "theme-designer": Palette,
   formatter: Code,
   "html-to-md": FileCode,
+  "html-to-json": Braces,
   "pdf-generator": FileText,
   "publication-designer": BookOpen,
   "image-converter": Image,

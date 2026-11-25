@@ -109,4 +109,25 @@ export class D1ChatHistory implements HistorySink {
       throw new SessionError("history_unavailable", "Conversation history is temporarily unavailable.", 503);
     }
   }
+
+  async load(ownerId: string, sessionId: string): Promise<{ session_id: string; messages: Message[] }> {
+    try {
+      const conversation = await this.db.prepare(`
+        SELECT session_id FROM chat_conversations
+        WHERE session_id = ? AND owner_id = ?
+      `).bind(sessionId, ownerId).first<{ session_id: string }>();
+      if (!conversation) return { session_id: sessionId, messages: [] };
+      const result = await this.db.prepare(`
+        SELECT sequence, role, content, request_id
+        FROM chat_messages
+        WHERE session_id = ?
+        ORDER BY sequence
+      `).bind(sessionId).all<Message>();
+      if (!result.success) throw new Error("Chat history query failed.");
+      return { session_id: sessionId, messages: result.results };
+    } catch {
+      console.error(JSON.stringify({ event: "chat_history_load_failed", session_id: sessionId }));
+      throw new SessionError("history_unavailable", "Conversation history is temporarily unavailable.", 503);
+    }
+  }
 }

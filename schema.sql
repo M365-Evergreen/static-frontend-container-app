@@ -143,3 +143,42 @@ CREATE TABLE IF NOT EXISTS chat_messages (
   PRIMARY KEY (session_id, sequence),
   UNIQUE (session_id, request_id, role)
 );
+CREATE TABLE IF NOT EXISTS chat_conversations (
+  id          TEXT PRIMARY KEY,
+  owner_sub   TEXT NOT NULL,
+  title       TEXT NOT NULL DEFAULT 'New chat',
+  created_at  TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  updated_at  TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+);
+CREATE INDEX IF NOT EXISTS idx_chat_conversations_owner
+  ON chat_conversations(owner_sub, updated_at DESC);
+
+CREATE TABLE IF NOT EXISTS chat_messages (
+  id              TEXT PRIMARY KEY,
+  conversation_id TEXT NOT NULL REFERENCES chat_conversations(id) ON DELETE CASCADE,
+  owner_sub       TEXT NOT NULL,
+  run_id          TEXT,
+  role            TEXT NOT NULL CHECK (role IN ('user','assistant','system','tool')),
+  content         TEXT NOT NULL,
+  seq             INTEGER NOT NULL,
+  created_at      TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_chat_messages_run
+  ON chat_messages(run_id, role) WHERE run_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_chat_messages_conversation
+  ON chat_messages(conversation_id, seq);
+CREATE INDEX IF NOT EXISTS idx_chat_messages_owner
+  ON chat_messages(owner_sub, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS chat_pending_revisions (
+  id              TEXT PRIMARY KEY,
+  conversation_id TEXT NOT NULL,
+  owner_sub       TEXT NOT NULL,
+  run_id          TEXT,
+  payload         TEXT NOT NULL,
+  attempts        INTEGER NOT NULL DEFAULT 0,
+  last_error      TEXT,
+  created_at      TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+);
+CREATE INDEX IF NOT EXISTS idx_chat_pending_owner
+  ON chat_pending_revisions(owner_sub, created_at);

@@ -34,6 +34,14 @@ export const tools: readonly ToolDefinition[] = [
     tags: ["html", "markdown", "converter"],
   },
   {
+    id: "html-to-json",
+    name: "HTML to JSON",
+    description:
+      "Convert pasted or local HTML elements and attributes into structured JSON.",
+    category: "code",
+    tags: ["html", "json", "converter", "dom"],
+  },
+  {
     id: "pdf-generator",
     name: "PDF Generator",
     description:
