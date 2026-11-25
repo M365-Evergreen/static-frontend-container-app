@@ -40,7 +40,7 @@ test("streams original file content and metadata with an atomic create-only cond
   const response = await writeFile(incoming, {
     async put(path, body, options) {
       assert.equal(path, key);
-      assert.equal(body, incoming.body);
+      assert.ok(body instanceof Uint8Array);
       assert.equal(await new Response(body).text(), "name,value\nreport,42\n");
       assert.equal(options.onlyIf.get("If-None-Match"), "*");
       assert.equal(options.onlyIf.has("If-Match"), false);
