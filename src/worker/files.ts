@@ -249,7 +249,7 @@ export async function writeFile(
   try {
     const body = folder || request.body === null
       ? new Uint8Array()
-      : new Uint8Array(await new Response(request.body).arrayBuffer());
+      : new Uint8Array(await request.arrayBuffer());
     const object = await bucket.put(key, body, {
       onlyIf,
       httpMetadata: {
