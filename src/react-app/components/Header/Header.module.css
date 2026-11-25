@@ -1,94 +1,117 @@
-:root {
-  --sidebar-expanded-width: 280px;
-  --sidebar-collapsed-width: 72px;
-  /* Set default active width */
-  --sidebar-current-width: var(--sidebar-expanded-width);
-}
-
-/* Update the variable when the layout has the collapsed state */
-.layout[data-sidebar="collapsed"],
-.layout.is-collapsed {
-  --sidebar-current-width: var(--sidebar-collapsed-width);
-}
-
-/* Alternative: If .sidebar comes immediately before .header in the DOM */
-/* .sidebar.is-collapsed + .header {
-  --sidebar-current-width: var(--sidebar-collapsed-width);
-} */
-
 .header {
-  /* Reference the dynamic variable */
-  width: calc(100% - var(--sidebar-current-width));
-  display: flex;
-  min-height: 4.5rem;
-  justify-content: space-between;
-  gap: 0.75rem;
-  padding: 0.75rem clamp(1rem, 3vw, 2rem);
-  background: var(--color-bg-primary);
   position: fixed;
-  transition: width 200ms ease, left 200ms ease;
   top: 0;
   right: 0;
+  z-index: 100;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  width: calc(100% - var(--sidebar-current-width));
+  min-width: 0;
+  min-height: 4.5rem;
+
+  padding: 0.75rem clamp(1rem, 3vw, 2rem);
+  gap: 1rem;
+
+  background: var(--color-bg-primary);
+
+  transition:
+    width 200ms ease,
+    left 200ms ease;
 }
 
-
-
-.headerCollapsed {
-  width: calc(100% - var(--sidebar-collapsed-width));
+/*
+ * Left-hand portion of the header.
+ * On mobile this contains the drawer button and brand.
+ */
+.headerStart {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 0.75rem;
 }
 
 .toggle {
+  flex: 0 0 auto;
   border: 0;
   background: transparent;
 }
 
 .brand {
   display: inline-flex;
-  min-width: 0;
   align-items: center;
+  min-width: 0;
   gap: 0.625rem;
+
   color: inherit;
   text-decoration: none;
 }
 
 .siteLogo {
+  flex: 0 0 auto;
+
   width: 28px;
   height: 28px;
+
   border-radius: 50%;
   object-fit: cover;
 }
 
 .siteTitle {
+  min-width: 0;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
   font-size: 1rem;
   font-weight: 600;
   letter-spacing: -0.025em;
 }
 
-.header nav {
+.navigation {
+  flex: 0 0 auto;
   margin-inline-start: auto;
 }
 
 .navList {
   display: flex;
+  align-items: center;
+
   gap: 0.25rem;
-  list-style: none;
+
   margin: 0;
   padding: 0;
+
+  list-style: none;
 }
 
 .navLink {
   display: inline-flex;
-  min-height: 44px;
   align-items: center;
+  justify-content: center;
+
+  min-height: 44px;
   gap: 0.5rem;
+
   padding: 0.5rem 0.75rem;
+
   border-radius: var(--radius-sm);
+
   color: var(--color-text-secondary);
   font-size: 0.875rem;
   text-decoration: none;
+
+  transition:
+    color 150ms ease,
+    background-color 150ms ease;
 }
 
 .navLink svg {
+  flex: 0 0 auto;
+
   width: 18px;
   height: 18px;
 }
@@ -99,18 +122,49 @@
   color: var(--color-text-primary);
 }
 
+/*
+ * Mobile
+ *
+ * The sidebar becomes an overlay/drawer on mobile, so it must no longer
+ * reduce the width of the header.
+ */
 @media (max-width: 47.999rem) {
-  .navLink {
-    justify-content: center;
-    width: 44px;
-    padding: 0;
+  .header {
+    left: 0;
+    right: 0;
+
+    width: 100%;
+    min-height: 4rem;
+
+    padding:
+      max(0.5rem, env(safe-area-inset-top))
+      max(1rem, env(safe-area-inset-right))
+      0.5rem
+      max(1rem, env(safe-area-inset-left));
+
+    gap: 0.75rem;
   }
 
-  .navLink span {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
+  .headerStart {
+    width: 100%;
+    gap: 0.625rem;
+  }
+
+  .siteLogo {
+    width: 32px;
+    height: 32px;
+  }
+
+  .siteTitle {
+    font-size: 1rem;
+  }
+
+  /*
+   * Normally this will not render because Header.tsx excludes the
+   * navigation when isMobile is true. Retaining this rule protects
+   * against JS/CSS breakpoint mismatch during resizing.
+   */
+  .navigation {
+    display: none;
   }
 }
